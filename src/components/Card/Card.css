@@ -1,0 +1,42 @@
+/* Estilo base para la tarjeta */
+.card {
+  width: 310px;
+  height: 136px;
+  background-color: var(--white);
+  border: 1px solid var(--color-border-card);
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  flex: 0 0 23%; /* Se ajusta al 23% del contenedor */
+}
+
+/* Diseño responsive */
+@media (max-width: 1200px) {
+  .card {
+    width: 270px; /* Reducir el ancho de la tarjeta en pantallas medianas */
+    height: auto; /* Ajustar la altura automáticamente según el contenido */
+    flex: 0 0 30%; /* Aumenta el ancho de la tarjeta para pantallas medianas */
+  }
+}
+
+@media (max-width: 800px) {
+  .card {
+    width: 220px; /* Ajustar el ancho en pantallas más pequeñas */
+    height: auto; /* Dejar que la altura se ajuste automáticamente */
+    flex: 0 0 45%; /* Ocupa más espacio en pantallas de 800px */
+  }
+}
+
+@media (max-width: 500px) {
+  .card {
+    width: 180px; /* Asegurar que la tarjeta no se vea demasiado ancha en móviles */
+    height: auto; /* Ajustar la altura de manera flexible */
+    flex: 0 0 90%; /* Las tarjetas ocuparán casi todo el ancho disponible en dispositivos móviles */
+  }
+}

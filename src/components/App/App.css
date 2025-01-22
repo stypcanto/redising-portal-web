@@ -1,0 +1,160 @@
+/* Variables globales */
+:root {
+  --font-family:  'Avenir', 'Helvetica', 'Arial', sans-serif;
+  --bg-color: #f4f4f9;
+  --primary-color: #21668b;
+  --secondary-color: #1b3f84;
+  --third-color: #a5dcf9;
+  --text-color: #333;
+  --card-bg-color: #ffffff;
+  --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --hover-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  --border-radius: 10px;
+  --transition: 0.3s ease-in-out;
+  --font-size-heading: 1.8rem;
+  --font-size-subheading: 1.2rem;
+  --font-size-body: 1rem;
+  --font-size-small: 0.9rem;
+}
+
+/* Estilos globales */
+body {
+  font-family: var(--font-family);
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+h1, h2, p {
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  text-decoration: none;
+  color: var(--primary-color);
+  transition: color var(--transition);
+}
+
+a:hover {
+  color: var(--secondary-color);
+}
+
+/* App Container */
+.app {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  flex: 1;
+}
+
+/* Header */
+.header {
+  background-color: var(--third-color);
+  color: white;
+  padding: 20px;
+  font-size: var(--font-size-heading);
+  font-weight: bold;
+  text-align: center;
+}
+
+.card-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  padding: 10px;
+  max-width: 1500px;
+  margin: 25px auto; /* Centra el contenedor horizontalmente */
+  width: 100%;
+  justify-items: center; /* Centra el contenido dentro del grid */
+  align-items: center; /* Centra el contenido verticalmente si es necesario */
+}
+
+.card {
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: #fff; /* Asegura que el fondo de la tarjeta sea blanco */
+}
+
+
+.card:hover {
+  transform: scale(1.05);
+  box-shadow: var(--hover-shadow);
+}
+
+.card-image {
+  width: 65px;
+  height: 65px;
+  margin-bottom: 15px;
+  border-radius: var(--border-radius);
+  object-fit: cover;
+}
+
+.card h2 {
+  color: var(--primary-color);
+  font-size: var(--font-size-subheading);
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.card p {
+  color: var(--text-color);
+  font-size: var(--font-size-body);
+  line-height: 1.6;
+  text-align: center;
+  margin: 0;
+}
+
+.card-subtitle {
+  color: #555;
+  font-size: var(--font-size-small);
+  margin-top: 5px; /* Reducido para no separar demasiado */
+  padding-bottom: 5px;
+  font-style: italic;
+  line-height: 1.4; /* Mejora la legibilidad y ajusta el espaciado */
+}
+
+/* Dropdown */
+.nav__dropdown {
+  max-height: 21px;
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+.nav__dropdown:hover {
+  max-height: 100rem;
+}
+
+.nav__dropdown-item:hover {
+  background-color: var(--secondary-color);
+}
+
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .card-container {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 800px) {
+  .card-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .card-container {
+    grid-template-columns: 1fr;
+  }
+}
+
