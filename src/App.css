@@ -1,0 +1,130 @@
+/* Estilos globales */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh; /* Asegura que la página ocupe toda la altura de la pantalla */
+}
+
+/* Contenedor principal de la app */
+.app {
+  text-align: center;
+  width: 100%;
+  max-width: 1200px; /* Limita el tamaño máximo de la app */
+  margin: 0 auto;
+}
+
+/* Encabezado */
+.header {
+  background-color: #0077b6;
+  color: white;
+  padding: 20px;
+  width: 100%;
+  text-align: center;
+}
+
+/* Contenedor de las tarjetas */
+.card-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* Fija 4 columnas de tamaño igual */
+  gap: 20px;
+  padding: 20px;
+  width: 100%;
+  justify-items: center; /* Asegura que las tarjetas se alineen al centro horizontalmente */
+  align-items: center;   /* Asegura que las tarjetas se alineen al centro verticalmente */
+}
+
+/* Estilos para cada tarjeta */
+.card {
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 10px; /* Bordes redondeados */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.3s ease-in-out; /* Añadido efecto de transición suave */
+  cursor: pointer;
+}
+
+/* Efecto al pasar el ratón sobre la tarjeta */
+.card:hover {
+  transform: scale(1.05); /* Escala el tamaño de la tarjeta */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Sombra más prominente */
+}
+
+/* Título de la tarjeta */
+.card h2 {
+  color: #0077b6;
+  margin: 0 0 10px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Descripción de la tarjeta */
+.card p {
+  color: #333;
+  font-size: 14px;
+  text-align: center;
+  line-height: 1.6;
+  margin: 10px 0 0 0;
+  padding: 0 10px;
+}
+
+/* Imagen en la tarjeta */
+.card-image {
+  width: 100px; /* Ajusta el tamaño de la imagen */
+  height: auto;
+  margin-bottom: 15px;
+  object-fit: cover; /* Asegura que la imagen se ajuste sin deformarse */
+}
+
+
+
+.card-subtitle {
+  color: #555; /* Color suave para el subtítulo */
+  font-size: 12px; /* Tamaño de fuente más pequeño */
+  margin: 0 0 10px 0;
+}
+
+.nav__dropdown {
+  max-height: 21px;
+  overflow: hidden;
+  transition: 0.4s ease-in-out;
+}
+
+.nav__dropdown:hover {
+  max-height: 100rem;
+}
+
+.nav__dropdown-item:hover {
+  background-color: var(--color-hover);
+}
+
+/* Media Query para pantallas más pequeñas */
+@media (max-width: 1200px) {
+  .card-container {
+    grid-template-columns: repeat(3, 1fr); /* 3 columnas en pantallas medianas */
+  }
+}
+
+@media (max-width: 800px) {
+  .card-container {
+    grid-template-columns: repeat(2, 1fr); /* 2 columnas en pantallas más pequeñas */
+  }
+}
+
+@media (max-width: 500px) {
+  .card-container {
+    grid-template-columns: 1fr; /* 1 columna en pantallas muy pequeñas (móviles) */
+    justify-items: center; /* Centrado horizontal */
+    align-items: center;   /* Centrado vertical */
+  }
+}
