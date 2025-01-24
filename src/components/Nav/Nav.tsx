@@ -1,50 +1,72 @@
+import React, { useState } from "react";
 
-
-  // Nav.tsx
-import React, { useState } from 'react';
-import './Nav.css';
-
-const Nav: React.FC = () => {
-  const [isDropdownOpen1, setIsDropdownOpen1] = useState(false);
-  const [isDropdownOpen2, setIsDropdownOpen2] = useState(false);
-
-  const toggleDropdown1 = () => setIsDropdownOpen1(!isDropdownOpen1);
-  const toggleDropdown2 = () => setIsDropdownOpen2(!isDropdownOpen2);
+const Nav: React.FC<{ setIsNavExpanded: React.Dispatch<React.SetStateAction<boolean>> }> = ({ setIsNavExpanded }) => {
+  const [expanded, setExpanded] = useState(false);
 
   return (
-    <nav className="navbar">
-      <ul className="nav-list">
-        <li className="nav-item">
-          <a href="#option1" onClick={toggleDropdown1} className="nav-link">
-            Opción 1
+    <div
+      className={`transition-all duration-300 fixed top-0 left-0 h-full ${expanded ? "w-64" : "w-16"} bg-blue-700 text-white`}
+      onMouseEnter={() => {
+        setExpanded(true);
+        setIsNavExpanded(true); // Cambiar el estado de la expansión
+      }}
+      onMouseLeave={() => {
+        setExpanded(false);
+        setIsNavExpanded(false); // Cambiar el estado de la expansión
+      }}
+    >
+      {/* Logo (opcional) */}
+      <div className="flex justify-center mt-4">
+        {/* Aquí puedes agregar un logo si deseas */}
+        <img src="path-to-your-logo.png" alt="Logo" className="w-8 h-8" />
+      </div>
+
+      {/* Menú */}
+      <ul className="mt-8 space-y-4">
+        <li className="px-4 py-2">
+          <a href="#" className="flex items-center">
+            <span className={`transition-all duration-300 ${expanded ? "ml-2" : ""}`}>
+              Información General
+            </span>
           </a>
-          {isDropdownOpen1 && (
-            <ul className="dropdown">
-              <li className="dropdown-item"><a href="#suboption1">Subopción 1</a></li>
-              <li className="dropdown-item"><a href="#suboption2">Subopción 2</a></li>
-              <li className="dropdown-item"><a href="#suboption3">Subopción 3</a></li>
-              <li className="dropdown-item"><a href="#suboption4">Subopción 4</a></li>
-            </ul>
-          )}
         </li>
-        <li className="nav-item">
-          <a href="#option2" onClick={toggleDropdown2} className="nav-link">
-            Opción 2
+        <li className="px-4 py-2">
+          <a href="#" className="flex items-center">
+            <span className={`transition-all duration-300 ${expanded ? "ml-2" : ""}`}>
+              Panel Principal TC TM TO
+            </span>
           </a>
-          {isDropdownOpen2 && (
-            <ul className="dropdown">
-              <li className="dropdown-item"><a href="#suboption1">Subopción 1</a></li>
-              <li className="dropdown-item"><a href="#suboption2">Subopción 2</a></li>
-              <li className="dropdown-item"><a href="#suboption3">Subopción 3</a></li>
-              <li className="dropdown-item"><a href="#suboption4">Subopción 4</a></li>
-            </ul>
-          )}
         </li>
-        <li className="nav-item"><a href="#option3" className="nav-link">Opción 3</a></li>
-        <li className="nav-item"><a href="#option4" className="nav-link">Opción 4</a></li>
-        <li className="nav-item"><a href="#option5" className="nav-link">Opción 5</a></li>
+        <li className="px-4 py-2">
+          <a href="#" className="flex items-center">
+            <span className={`transition-all duration-300 ${expanded ? "ml-2" : ""}`}>
+              Panel Principal TAD
+            </span>
+          </a>
+        </li>
+        <li className="px-4 py-2">
+          <a href="#" className="flex items-center">
+            <span className={`transition-all duration-300 ${expanded ? "ml-2" : ""}`}>
+              Teledot
+            </span>
+          </a>
+        </li>
+        <li className="px-4 py-2">
+          <a href="#" className="flex items-center">
+            <span className={`transition-all duration-300 ${expanded ? "ml-2" : ""}`}>
+              Biblioteca Médica
+            </span>
+          </a>
+        </li>
+        <li className="px-4 py-2">
+          <a href="#" className="flex items-center">
+            <span className={`transition-all duration-300 ${expanded ? "ml-2" : ""}`}>
+              Leyes y Normas
+            </span>
+          </a>
+        </li>
       </ul>
-    </nav>
+    </div>
   );
 };
 

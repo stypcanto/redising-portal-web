@@ -1,5 +1,5 @@
-import React from 'react';
-import "../Header/Header.css";
+import React from "react";
+import "../styles.css";
 
 type HeaderProps = {
   title: string;
@@ -10,13 +10,30 @@ type HeaderProps = {
 
 const Header: React.FC<HeaderProps> = ({ title, subtitle, logoLeft, logoRight }) => {
   return (
-    <header className="header">
-      {logoLeft && <img src={logoLeft} alt="Logo Izquierda" className="logo-left" />}
-      <div className="header-content">
-        <h1 className="title">{title}</h1>
-        {subtitle && <h2 className="subtitle">{subtitle}</h2>}
+    <header className="bg-white flex items-center justify-between p-8">
+      {/* Logo izquierdo con transición */}
+      {logoLeft && (
+        <img
+          src={logoLeft}
+          alt="Logo Izquierda"
+          className="transition-all duration-300 ease-in-out w-48 h-auto object-contain sm:w-32 md:w-48"
+        />
+      )}
+
+      {/* Contenedor central con el título y subtítulo */}
+      <div className="text-center flex-1">
+        <h1 className="text-3xl font-semibold text-gray-800">{title}</h1>
+        {subtitle && <h2 className="text-xl text-gray-600 mt-2">{subtitle}</h2>}
       </div>
-      {logoRight && <img src={logoRight} alt="Logo Derecha" className="logo-right" />}
+
+      {/* Logo derecho */}
+      {logoRight && (
+        <img
+          src={logoRight}
+          alt="Logo Derecha"
+          className="w-52 h-auto object-contain sm:w-32 md:w-48"
+        />
+      )}
     </header>
   );
 };

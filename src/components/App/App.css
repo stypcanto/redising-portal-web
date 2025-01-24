@@ -123,20 +123,6 @@ a:hover {
   line-height: 1.4; /* Mejora la legibilidad y ajusta el espaciado */
 }
 
-/* Dropdown */
-.nav__dropdown {
-  max-height: 21px;
-  overflow: hidden;
-  transition: var(--transition);
-}
-
-.nav__dropdown:hover {
-  max-height: 100rem;
-}
-
-.nav__dropdown-item:hover {
-  background-color: var(--secondary-color);
-}
 
 
 /* Responsive Design */
