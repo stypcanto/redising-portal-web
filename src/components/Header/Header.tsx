@@ -10,7 +10,7 @@ type HeaderProps = {
 
 const Header: React.FC<HeaderProps> = ({ title, subtitle, logoLeft, logoRight }) => {
   return (
-    <header className="bg-white flex items-center justify-between p-8">
+    <header className="bg-white flex items-center justify-between p-8 ">
       {/* Logo izquierdo con transición */}
       {logoLeft && (
         <img

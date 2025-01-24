@@ -10,7 +10,7 @@ interface CardProps {
 const Card: React.FC<CardProps> = ({ title, imageSrc, subtitle, onClick }) => {
   return (
     <div
-   className="cursor-pointer rounded-lg shadow-lg bg-white hover:bg-blue-500 hover:text-white hover:shadow-2xl transform hover:scale-105 active:scale-95 transition-all duration-300"
+   className="cursor-pointer rounded-lg shadow-lg bg-white hover:bg-[#0c63ab] hover:text-white hover:shadow-2xl transform hover:scale-105 active:scale-95 transition-all duration-300"
   onClick={() => window.open(onClick, "_blank")} // Abre el enlace en una nueva pestaña
 >
       <img
