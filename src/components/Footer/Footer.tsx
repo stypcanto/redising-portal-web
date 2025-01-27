@@ -15,7 +15,7 @@ const Footer: React.FC = () => {
           <p>&copy; {new Date().getFullYear()} CENATE. Todos los derechos reservados.</p>
         </div>
         <div className="mt-4 text-sm">
-          <p>Diseñado y desarrollado por <span className="font-semibold">Equipo de Gestión</span>.</p>
+          <p>Diseñado y desarrollado por <span className="font-semibold">Equipo de Gestión TI</span>.</p>
         </div>
       </div>
     </footer>

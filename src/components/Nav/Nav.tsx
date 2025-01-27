@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import menuIcon from "../../../public/images/Iconos_Imagenes - teleconsulta.svg";
+import menuIcon from "/images/Iconos_Imagenes - teleconsulta.svg";
 
 const Nav: React.FC<{ setIsNavExpanded: React.Dispatch<React.SetStateAction<boolean>> }> = ({ setIsNavExpanded }) => {
   const [expanded, setExpanded] = useState(false);

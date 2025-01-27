@@ -7,8 +7,8 @@ import "./App.css";
 import { cardData } from "../Data/data";
 
 // Importar las imágenes de los logos
-import logoLeft from "../../../public/images/LOGO CENATE3.png"; 
-import logoRight from "../../../public/images/LOGO CENATE2.png";
+import logoLeft from "/images/LOGO CENATE3.png"; 
+import logoRight from "/images/LOGO CENATE2.png";
 
 const App: React.FC = () => {
   const [cards] = useState(cardData);
