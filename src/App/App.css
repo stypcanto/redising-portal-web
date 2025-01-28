@@ -64,6 +64,38 @@ a:hover {
   text-align: center;
 }
 
+.custom-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #2b75b2; /* Color de fondo personalizado */
+  color: #ffffff; /* Texto blanco */
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease-in-out;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.custom-button:hover {
+  background-color: #21659c; /* Color más oscuro al pasar el mouse */
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); /* Sombra más intensa */
+  transform: scale(1.05); /* Animación de aumento de tamaño */
+  transition: all 0.3s ease;
+}
+
+.custom-button h3 {
+  transition: color 0.3s ease-in-out;
+}
+
+.custom-button:hover h3 {
+  color: #fefefe; /* Cambia el color del texto al pasar el mouse */
+}
+
+.custom-button:active {
+  transform: scale(1); /* Asegura que el botón vuelva a su tamaño normal al hacer clic */
+}
 
 
 
