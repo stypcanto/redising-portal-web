@@ -1,33 +1,21 @@
 import { Link } from 'react-router-dom';
 import Footer_azul from "../components/Footer/Footer_azul";
+import Header_template from "../components/Header/Header_template";
 
 const Home = () => {
   return (
     <div className="min-h-screen ">
       {/* Login Section */}
-      <div className="bg-[#2e63a6] text-white p-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <div className="text-center mb-8">
-      <img 
-        src="/images/LOGOESSALUD.png" 
-        alt="Centro Nacional de Telemedicina - CENATE" 
-        className="mx-auto w-40 mt-4 h-auto" 
-      />
-    </div>
-
-        
-    <Link
-  to="/login"
-  className="bg-white text-[#2e63a6] px-6 py-3 rounded transition duration-300 ease-in-out transform hover:bg-blue-400 hover:text-white hover:scale-110 shadow-lg"
->
-  Iniciar sesión
-</Link>
-
+      <Header_template>
+        <div className="flex justify-end p-4">
+          <Link
+            to="/Login"
+            className="bg-white text-[#2e63a6] px-6 py-3 rounded transition duration-300 ease-in-out transform hover:bg-blue-400 hover:text-white hover:scale-110 shadow-lg"
+          >
+            Iniciar sesión
+          </Link>
         </div>
-      </div>
-
-    
-      <div className="bg-white py-16 px-4 sm:px-6 lg:px-8 mb-30">
+      </Header_template>
       
 
 
@@ -72,6 +60,7 @@ const Home = () => {
        
        
         <div className="max-w-7xl mx-auto mt-2">  
+          <div>
           
 
         <h2 className="text-lg  px-2 sm:text-2xl font-bold text-[#2e63a6] mb-4 sm:mb-6">
@@ -123,7 +112,7 @@ const Home = () => {
 
           {/* Links for further information */}
           <div className="text-center mt-6">
-  <div className="flex flex-col sm:flex-row sm:justify-center sm:space-x-4 space-y-4 sm:space-y-0">
+  <div className="flex flex-col sm:flex-row sm:justify-center sm:space-x-4 space-y-4 sm:space-y-0 mb-14">
     <a href="https://www.gob.pe/52766-realizar-una-consulta-por-telemedicina"   target="_blank"  className="bg-[#2e63a6] text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-[#1d4f8a] transition duration-300">
       Realizar una consulta por telemedicina
     </a>
