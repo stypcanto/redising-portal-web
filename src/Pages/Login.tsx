@@ -18,7 +18,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-blue-900 flex items-center justify-center">
+    <div className="min-h-screen bg-[#2e63a6] flex items-center justify-center">
       <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
         <h1 className="text-3xl font-semibold text-center text-blue-900 mb-6">Login CENATE</h1>
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
@@ -43,7 +43,7 @@ const Login = () => {
           </div>
           <button 
             type="submit" 
-            className="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 bg-[#2e63a6] text-white rounded-lg hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             Iniciar sesión
           </button>
