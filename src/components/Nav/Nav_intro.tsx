@@ -4,7 +4,7 @@ import menuIcon from "/images/home.png"; // Asegúrate de que esta imagen sea de
 const Nav_intro: React.FC = () => {
   return (
     <div
-      className="relative left-0 w-72 bg-white text-black  border-r border-gray-300 z-40 transition-all duration-300"
+      className="relative left-0 w-48 bg-white text-black  border-r border-gray-300 z-40 transition-all duration-300"
       style={{ minHeight: 'calc(80vh - 4rem)' }} // Ajuste de altura según el espacio disponible
     >
       {/* Logo o ícono */}
@@ -13,7 +13,7 @@ const Nav_intro: React.FC = () => {
       </div>
 
       {/* Menú */}
-      <div className="mt-6">
+      <div className="mt-4">
         <ul className="space-y-4">
           {/* Información General con fondo gris */}
           <li className="px-4 py-3 bg-gray-300 hover:bg-gray-200 transition-all duration-300  group">
@@ -28,7 +28,7 @@ const Nav_intro: React.FC = () => {
                 className="w-8 h-8 cursor-pointer"
               />
               {/* Nombre de la página */}
-              <span className="ml-4">Página Principal</span>
+              <span className="ml-4 text-sm">Página Principal</span>
             </a>
           </li>
         </ul>

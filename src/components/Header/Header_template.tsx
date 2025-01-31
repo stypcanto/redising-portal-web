@@ -6,8 +6,8 @@ interface HeaderTemplateProps {
 
 const Header_template = ({ children }: HeaderTemplateProps) => {
   return (
-    <div className="bg-[#0a5ba9] text-white w-full h-auto">
-      <div className="max-w-7xl mx-auto flex justify-between items-center p-4">
+    <div className="bg-[#0a5ba9] text-white w-full h-auto border-b-2">
+      <div className="max-w-7xl mx-auto flex justify-between items-center p-1">
         <div className="text-center">
           <img
             src="/images/LOGOESSALUD.png"

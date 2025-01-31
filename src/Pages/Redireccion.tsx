@@ -3,18 +3,27 @@ import { Link } from "react-router-dom";
 import Footer_azul from "../components/Footer/Footer_azul";
 import Header_template from "../components/Header/Header_template";
 import Nav_intro from "../components/Nav/Nav_intro";
-import NavTransversal from "../components/Nav/Nav_transversal"; // Ajusta la ruta según sea necesario
+import NavTransversal from "../components/Nav/Nav_transversal"; 
+import CardsList from "../components/Card/CardList";
+import { CardsDataAdminType } from "../types/CardsDataAdminType"; // Import the type
 
 const Redireccion = () => {
-  const [selectedCard, setSelectedCard] = useState<string | null>(null);
+  // Inicializamos con "DireccionGeneral"
+  const [selectedCard, setSelectedCard] = useState<keyof CardsDataAdminType>("DireccionGeneral");
 
-  function handleCardClick(cardName: string | null) {
+  function handleCardClick(cardName: keyof CardsDataAdminType) {
     if (selectedCard !== cardName) {
-      setSelectedCard(cardName); // Solo cambia el contenido mostrado
-    } else {
-      // No cambia el estado si ya está seleccionado
+      setSelectedCard(cardName);
     }
   }
+
+  // Opciones del menú
+  const menuOptions: { key: keyof CardsDataAdminType; label: string }[] = [
+    { key: "DireccionGeneral", label: "Dirección General" },
+    { key: "SDGT", label: "SDGT" },
+    { key: "SDRIST", label: "SDRIST" },
+    { key: "DireccionDespacho", label: "Dirección de Despacho" },
+  ];
 
   return (
     <div className="flex flex-col h-screen">
@@ -29,7 +38,7 @@ const Redireccion = () => {
           </div>
           <Link
             to="/"
-            className="bg-white text-[#2e63a6] px-6 py-3 rounded transition duration-300 ease-in-out transform hover:bg-blue-400 hover:text-white hover:scale-110 shadow-lg"
+            className="bg-white text-sm text-[#2e63a6] px-5 py-2 rounded transition duration-300 ease-in-out transform hover:bg-blue-400 hover:text-white hover:scale-110 shadow-lg"
           >
             Cerrar Sesión
           </Link>
@@ -39,160 +48,37 @@ const Redireccion = () => {
       <div className="flex flex-grow">
         <Nav_intro />
 
-        <div className="flex-grow bg-blue-100 py-16 sm:px-6 lg:px-8 overflow-y-auto">
-          <div className="max-w-7xl mx-auto text-center">
-            <h1 className="text-3xl font-bold text-[#2e63a6] mb-8 uppercase text-left">
+        <div className="flex-grow bg-blue-100 py-5 sm:px-6 lg:px-8 overflow-y-auto">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-xl font-bold text-[#2e63a6] mb-4 uppercase text-left">
               Bienvenido al Portal de Datos del CENATE
             </h1>
 
-            <nav className="bg-white py-4 mb-10 border-1 border-[#2e63a6] rounded-xl">
-              <div className="max-w-7xl mx-auto text-center">
+            {/* Menú de opciones con estado activo */}
+            <nav className="bg-white py-2 mb-4 shadow-lg rounded-xl">
+              <div className="max-w-4xl mx-auto text-center">
                 <ul className="flex justify-center space-x-6">
-                  <li>
-                    <button
-                      className="text-xl font-semibold hover:text-white hover:bg-[#2e63a6] py-2 px-4 rounded transition duration-300"
-                      onClick={() => handleCardClick("DireccionGeneral")}
-                    >
-                      Dirección General
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      className="text-xl font-semibold hover:text-white hover:bg-[#2e63a6] py-2 px-4 rounded transition duration-300"
-                      onClick={() => handleCardClick("SDGT")}
-                    >
-                      SDGT
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      className="text-xl font-semibold hover:text-white hover:bg-[#2e63a6] py-2 px-4 rounded transition duration-300"
-                      onClick={() => handleCardClick("SDRIST")}
-                    >
-                      SDRIST
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      className="text-xl font-semibold hover:text-white hover:bg-[#2e63a6] py-2 px-4 rounded transition duration-300"
-                      onClick={() => handleCardClick("DireccionDespacho")}
-                    >
-                      Dirección de Despacho
-                    </button>
-                  </li>
+                  {menuOptions.map(({ key, label }) => (
+                    <li key={key}>
+                      <button
+                        className={`text-sm py-2 px-4 rounded transition duration-300 ${
+                          selectedCard === key ? "bg-[#2e63a6] text-white" : "hover:bg-[#2e63a6] hover:text-white"
+                        }`}
+                        onClick={() => handleCardClick(key)}
+                      >
+                        {label}
+                      </button>
+                    </li>
+                  ))}
                 </ul>
               </div>
             </nav>
 
-            <div className="bg-white p-8 rounded-xl shadow-lg min-h-[300px]">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {selectedCard === "DireccionGeneral" && (
-                  <>
-                    <div className="bg-blue-50 p-6 rounded-lg shadow-lg hover:bg-blue-100 transition">
-                      <h3 className="text-xl font-semibold text-[#2e63a6]">
-                        Gestión de Procesos y Mejora Continua
-                      </h3>
-                      <p className="text-gray-700 mt-2">R. de Calidad</p>
-                    </div>
-
-                    <div className="bg-blue-50 p-6 rounded-lg shadow-lg hover:bg-blue-100 transition">
-                      <h3 className="text-xl font-semibold text-[#2e63a6]">
-                        Gestión de la Reputación
-                      </h3>
-                      <p className="text-gray-700 mt-2">R. de Imágen y Comunicación</p>
-                    </div>
-                  </>
-                )}
-
-                {selectedCard === "SDGT" && (
-                  <>
-                    <div className="bg-blue-50 p-6 rounded-lg shadow-lg hover:bg-blue-100 transition">
-                      <h3 className="text-xl font-semibold text-[#2e63a6]">Telegestión</h3>
-                      <p className="text-gray-700 mt-2">Gestores Territoriales</p>
-                    </div>
-
-                    <div className="bg-blue-50 p-6 rounded-lg shadow-lg hover:bg-blue-100 transition">
-                      <h3 className="text-xl font-semibold text-[#2e63a6]">Telemedicina</h3>
-                      <p className="text-gray-700 mt-2">Coordinadores</p>
-                    </div>
-
-                    <div className="bg-blue-50 p-6 rounded-lg shadow-lg hover:bg-blue-100 transition">
-                      <h3 className="text-xl font-semibold text-[#2e63a6]">Telemedicina</h3>
-                      <p className="text-gray-700 mt-2">G. de Citas de Pacientes</p>
-                    </div>
-
-                    <div className="bg-blue-50 p-6 rounded-lg shadow-lg hover:bg-blue-100 transition">
-                      <h3 className="text-xl font-semibold text-[#2e63a6]">Teleformación en Salud</h3>
-                      <p className="text-gray-700 mt-2">Telecapacitación / TeleIEC</p>
-                    </div>
-
-                    <div className="bg-blue-50 p-6 rounded-lg shadow-lg hover:bg-blue-100 transition">
-                      <h3 className="text-xl font-semibold text-[#2e63a6]">Telemedicina</h3>
-                      <p className="text-gray-700 mt-2">G. de Citas de Prof. de Salud</p>
-                    </div>
-
-                    <div className="bg-blue-50 p-6 rounded-lg shadow-lg hover:bg-blue-100 transition">
-                      <h3 className="text-xl font-semibold text-[#2e63a6]">Gestión TI</h3>
-                      <p className="text-gray-700 mt-2">R. de TI</p>
-                    </div>
-                  </>
-                )}
-
-                {selectedCard === "SDRIST" && (
-                  <>
-                    <div className="bg-blue-50 p-6 rounded-lg shadow-lg hover:bg-blue-100 transition">
-                      <h3 className="text-xl font-semibold text-[#2e63a6]">Diseño Institucional</h3>
-                      <p className="text-gray-700 mt-2">
-                        R. de regulación, iniciativas y servicios en Telesalud
-                      </p>
-                    </div>
-
-                    <div className="bg-blue-50 p-6 rounded-lg shadow-lg hover:bg-blue-100 transition">
-                      <h3 className="text-xl font-semibold text-[#2e63a6]">Proyectos Disruptivos</h3>
-                      <p className="text-gray-700 mt-2">R. Investigación y proyectos</p>
-                    </div>
-
-                    <div className="bg-blue-50 p-6 rounded-lg shadow-lg hover:bg-blue-100 transition">
-                      <h3 className="text-xl font-semibold text-[#2e63a6]">Gestión de Datos</h3>
-                      <p className="text-gray-700 mt-2">R. de Datos</p>
-                    </div>
-                  </>
-                )}
-
-                {selectedCard === "DireccionDespacho" && (
-                  <>
-                    <div className="bg-blue-50 p-6 rounded-lg shadow-lg hover:bg-blue-100 transition">
-                      <h3 className="text-xl font-semibold text-[#2e63a6]">RRHH</h3>
-                      <p className="text-gray-700 mt-2">R. de RRHH</p>
-                    </div>
-
-                    <div className="bg-blue-50 p-6 rounded-lg shadow-lg hover:bg-blue-100 transition">
-                      <h3 className="text-xl font-semibold text-[#2e63a6]">Abastecimiento</h3>
-                      <p className="text-gray-700 mt-2">R. de Abastecimiento</p>
-                    </div>
-
-                    <div className="bg-blue-50 p-6 rounded-lg shadow-lg hover:bg-blue-100 transition">
-                      <h3 className="text-xl font-semibold text-[#2e63a6]">Planeamiento</h3>
-                      <p className="text-gray-700 mt-2">R. de Planeamiento</p>
-                    </div>
-
-                    <div className="bg-blue-50 p-6 rounded-lg shadow-lg hover:bg-blue-100 transition">
-                      <h3 className="text-xl font-semibold text-[#2e63a6]">Presupuesto</h3>
-                      <p className="text-gray-700 mt-2">R. de Presupuesto</p>
-                    </div>
-
-                    <div className="bg-blue-50 p-6 rounded-lg shadow-lg hover:bg-blue-100 transition">
-                      <h3 className="text-xl font-semibold text-[#2e63a6]">Contable</h3>
-                      <p className="text-gray-700 mt-2">R. de Contable</p>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
+            {/* Muestra los cards según la selección */}
+            <CardsList selectedCard={selectedCard} />
           </div>
         </div>
 
-        {/* Aquí está el NavTransversal debajo del banner */}
         <NavTransversal />
       </div>
 

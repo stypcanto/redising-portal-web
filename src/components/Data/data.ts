@@ -112,3 +112,4 @@ export const cardData = [
     onClick: "https://app.powerbi.com/view?r=eyJrIjoiZjliMGM4NWYtMmYwOS00NjQ3LWFlNDctMDdhMGVjZDc4YjVlIiwidCI6IjM0ZjMyNDE5LTFjMDUtNDc1Ni04OTZlLTQ1ZDYzMzcyNjU5YiIsImMiOjR9"
   }
 ];
+

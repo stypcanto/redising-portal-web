@@ -27,7 +27,7 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#2e63a6] flex items-center justify-center">
+    <div className="min-h-screen   bg-cover bg-center  bg-[url('/images/fondo-portal-web-cenate-2025.png')] flex items-center justify-center">
       <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
         <h1 className="text-3xl font-semibold text-center text-blue-900 mb-6">Recuperar Contraseña</h1>
         {message && <p className="text-green-500 text-center mb-4">{message}</p>}
