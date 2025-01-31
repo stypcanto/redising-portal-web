@@ -6,7 +6,7 @@ interface HeaderTemplateProps {
 
 const Header_template = ({ children }: HeaderTemplateProps) => {
   return (
-    <div className="bg-[#2e63a6] text-white w-full h-auto">
+    <div className="bg-[#0a5ba9] text-white w-full h-auto">
       <div className="max-w-7xl mx-auto flex justify-between items-center p-4">
         <div className="text-center">
           <img

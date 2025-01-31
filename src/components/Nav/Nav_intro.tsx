@@ -8,7 +8,7 @@ const Nav_intro: React.FC = () => {
       style={{ minHeight: 'calc(80vh - 4rem)' }} // Ajuste de altura según el espacio disponible
     >
       {/* Logo o ícono */}
-      <div className="flex justify-center mt-12">
+      <div className="flex justify-center mt-8">
         {/* Aquí podrías agregar otro ícono si lo necesitas */}
       </div>
 

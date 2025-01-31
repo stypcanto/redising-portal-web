@@ -2,7 +2,7 @@ import React from "react";
 
 const Footer_azul: React.FC = () => {
   return (
-    <footer className=" bg-[#2e63a6] text-white py-6 ">
+    <footer className=" bg-[#0a5ba9] text-white py-6 ">
       <div className="container mx-auto text-center">
         {/* 
   <div className="flex justify-center space-x-6 mb-4">
@@ -11,12 +11,12 @@ const Footer_azul: React.FC = () => {
     <a href="/contact" className="hover:text-blue-400 transition-colors duration-300">Contacto</a>
   </div>
 */}
-        <div className="text-sm">
-          <p>&copy; {new Date().getFullYear()} CENATE. Todos los derechos reservados.</p>
-        </div>
-        <div className="mt-4 text-sm">
-          <p>Diseñado y desarrollado por <span className="font-semibold">Equipo de Gestión TI</span>.</p>
-        </div>
+        <div className="text-center text-white  text-sm py-4  border-gray-300">
+  <p className="mb-1">&copy; {new Date().getFullYear()} <span className="font-semibold">CENATE - ESSALUD</span>. Todos los derechos reservados.</p>
+  <p className="mb-1">Diseñado y desarrollado por <span className="font-semibold text-white">Equipo de Gestión TI</span>.</p>
+  <p className="text-white">Versión 1.0</p>
+</div>
+
       </div>
     </footer>
   );
