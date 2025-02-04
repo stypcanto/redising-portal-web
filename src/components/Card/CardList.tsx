@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { cardsData_admin } from "../Data/data_card_admin";
-import { extraOptions } from "../Data/data_minicard"; // ✅ Usa la importación en lugar de redefinirlo
+import { extraOptions } from "../Data/data_minicard"; 
+import { telemedicinaOptionsData } from "../Data/telemedicinaOptionData";
 
 type CardType = {
   title: string;
@@ -19,6 +20,8 @@ type CardsDataAdminType = {
 const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | null }) => {
   const [isPopupVisible, setPopupVisible] = useState(false);
   const [selectedSubCard, setSelectedSubCard] = useState<string | null>(null);
+  const [telemedicinaNavActive, setTelemedicinaNavActive] = useState(false);
+  const [selectedTelemedicinaOption, setSelectedTelemedicinaOption] = useState<string | null>(null);
 
   const cardsadmin = selectedCard ? [...(cardsData_admin[selectedCard] || [])] : [];
 
@@ -27,10 +30,14 @@ const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | 
   }
 
   const handleCardClick = (title: string, url?: string) => {
-    setSelectedSubCard(null); // Reiniciar el estado antes de cambiar de sección
+    const standardSubCards = ["Telegestión"];
 
-    if (title === "Telegestión") {
+    if (title.trim() === "Telemedicina.") {
       setSelectedSubCard(title);
+      setTelemedicinaNavActive(true);
+    } else if (standardSubCards.includes(title)) {
+      setSelectedSubCard(title);
+      setTelemedicinaNavActive(false);
     } else if (!url?.trim()) {
       setPopupVisible(true);
     } else {
@@ -58,44 +65,81 @@ const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | 
         ))}
       </div>
 
-{/* Card emergente con nuevas opciones */}
-{selectedSubCard && (
-  <div className="fixed inset-0 bg-[#2e63a6]/50 flex justify-center items-center z-50">
-
-    <div className="w-[80%] max-w-2xl bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center relative">
-      <h3 className="text-xl text-[#2e63a6] font-semibold mb-6">{selectedSubCard}</h3>
-
-      {/* Opciones dentro del Card emergente */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 w-full">
-        {extraOptions.map((option) => (
-          <a
-            key={option.title}
-            href={option.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-gray-100 p-4 rounded-lg shadow-md w-full flex items-center gap-3 hover:bg-gray-200 hover:scale-105 transition-transform"
-          >
-            <img src={option.icon} alt={option.title} className="w-10 h-10" />
-            <div>
-              <h4 className="font-medium">{option.title}</h4>
+      {/* Card emergente con nuevas opciones */}
+      {selectedSubCard && (
+        <div className="fixed inset-0 bg-[#2e63a6]/50 flex justify-center items-center z-50">
+          <div className="w-[80%] max-w-3xl bg-white p-8 rounded-2xl shadow-2xl relative">
+            <h3 className="text-xl font-semibold text-[#2e63a6] mb-6">{selectedSubCard}</h3>
             
-            </div>
-          </a>
-        ))}
-      </div>
+         {/* Card emergente con nuevas opciones para Telemedicina. */}
+            {telemedicinaNavActive ? (
+              <div>
+                <nav className="flex justify-around bg-blue-100 p-3 rounded-lg shadow-md mb-4 gap-2">
+                  {["Coord. de Gestión de Citas", "Coord de TC / TO / TINT", "Coord. de TM / TU", "Coord e TAD", "Coord. General"].map((navOption) => (
+                    <button 
+                      key={navOption} 
+                      onClick={() => setSelectedTelemedicinaOption(navOption)}
+                      className={`px-4 py-2 rounded-lg text-sm ${
+                        selectedTelemedicinaOption === navOption ? "bg-[#2e63a6] text-white" : "bg-white text-[#2e63a6]"
+                      }`}
+                    >
+                      {navOption}
+                    </button>
+                  ))}
+                </nav>
 
-      {/* Botón de cierre */}
-      <button 
-        onClick={() => setSelectedSubCard(null)} 
-        className="absolute top-4 right-4 bg-red-500 text-white px-3 py-2 rounded-full text-lg"
-      >
-        ✕
-      </button>
-    </div>
-  </div>
-)}
+                {/* 🔹 Renderizar opciones según selección en el NAV */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  {selectedTelemedicinaOption && telemedicinaOptionsData[selectedTelemedicinaOption] ? (
+                    telemedicinaOptionsData[selectedTelemedicinaOption].map((option) => (
+                      <a
+                        key={option.title}
+                        href={option.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-gray-100 p-4 rounded-lg shadow-md flex items-center gap-3 hover:bg-gray-200 transition-transform"
+                      >
+                        <img src={option.icon} alt={option.title} className="w-10 h-10" />
+                        <h4 className="font-medium">{option.title}</h4>
+                      </a>
+                    ))
+                  ) : (
+                    <p className="text-gray-500">Seleccione una opción</p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                {extraOptions.map((option) => (
+                  <a
+                    key={option.title}
+                    href={option.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-gray-100 p-4 rounded-lg shadow-md flex items-center gap-3 hover:bg-gray-200 transition-transform"
+                  >
+                    <img src={option.icon} alt={option.title} className="w-10 h-10" />
+                    <h4 className="font-medium">{option.title}</h4>
+                  </a>
+                ))}
+              </div>
+            )}
 
-
+            {/* Botón de cierre */}
+            <button 
+              onClick={() => {
+                setSelectedSubCard(null);
+                setTelemedicinaNavActive(false);
+                setSelectedTelemedicinaOption(null);
+              }} 
+              className="absolute top-4 right-4 bg-red-500 text-white px-3 py-2 rounded-full text-lg"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Popup de "Información no disponible" */}
       {isPopupVisible && (
