@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { cardsData_admin } from "../Data/data_card_admin";
+import { extraOptions } from "../Data/data_minicard"; // ✅ Usa la importación en lugar de redefinirlo
 
 type CardType = {
   title: string;
   description: string;
   icon: string;
-  url?: string; // Asegúrate de incluir la propiedad url
+  url?: string;
 };
 
 type CardsDataAdminType = {
@@ -16,43 +17,39 @@ type CardsDataAdminType = {
 };
 
 const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | null }) => {
-  // Estado para controlar el popup
   const [isPopupVisible, setPopupVisible] = useState(false);
+  const [selectedSubCard, setSelectedSubCard] = useState<string | null>(null);
 
-    // Verifica que selectedCard no sea null antes de acceder a cardsData_admin
-  const cardsadmin = selectedCard ? cardsData_admin[selectedCard] : [];
+  const cardsadmin = selectedCard ? [...(cardsData_admin[selectedCard] || [])] : [];
 
-  const handleCardClick = (url?: string) => {
-    if (!url) {
-      // Si no hay URL, mostramos el popup
+  if (!cardsadmin.length) {
+    return <div>No se encontraron tarjetas para la sección seleccionada.</div>;
+  }
+
+  const handleCardClick = (title: string, url?: string) => {
+    setSelectedSubCard(null); // Reiniciar el estado antes de cambiar de sección
+
+    if (title === "Telegestión") {
+      setSelectedSubCard(title);
+    } else if (!url?.trim()) {
       setPopupVisible(true);
     } else {
-      // Si hay URL, redirige al hipervínculo
       window.open(url, "_blank");
     }
   };
 
-  const closePopup = () => {
-    setPopupVisible(false);
-  };
-
-
   return (
-    <div className="bg-white p-8 rounded-xl shadow-lg min-h-[300px]">
+    <div key={selectedCard} className="bg-white p-8 rounded-xl shadow-lg min-h-[300px]">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {cardsadmin.map((card, index) => (
+        {cardsadmin.map((card) => (
           <div
-            key={index}
+            key={card.title}
             className="bg-blue-50 p-2 rounded-lg shadow-lg hover:bg-blue-100 transition cursor-pointer"
-            onClick={() => handleCardClick(card.url)}
+            onClick={() => handleCardClick(card.title, card.url)}
           >
             <div className="flex items-center">
-              <img
-                src={card.icon}
-                alt="Ícono"
-                className="w-8 h-8 mr-4"
-              />
-              <div className="flex items-start flex-col">
+              <img src={card.icon || "/images/icono-defecto.png"} alt={card.title} className="w-8 h-8 mr-4" />
+              <div className="flex flex-col">
                 <h3 className="text-sm font-semibold">{card.title}</h3>
                 <p className="text-[#2e63a6] text-xs">{card.description}</p>
               </div>
@@ -61,20 +58,54 @@ const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | 
         ))}
       </div>
 
+{/* Card emergente con nuevas opciones */}
+{selectedSubCard && (
+  <div className="fixed inset-0 bg-[#2e63a6]/50 flex justify-center items-center z-50">
+
+    <div className="w-[80%] max-w-2xl bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center relative">
+      <h3 className="text-xl text-[#2e63a6] font-semibold mb-6">{selectedSubCard}</h3>
+
+      {/* Opciones dentro del Card emergente */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 w-full">
+        {extraOptions.map((option) => (
+          <a
+            key={option.title}
+            href={option.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-gray-100 p-4 rounded-lg shadow-md w-full flex items-center gap-3 hover:bg-gray-200 hover:scale-105 transition-transform"
+          >
+            <img src={option.icon} alt={option.title} className="w-10 h-10" />
+            <div>
+              <h4 className="font-medium">{option.title}</h4>
+            
+            </div>
+          </a>
+        ))}
+      </div>
+
+      {/* Botón de cierre */}
+      <button 
+        onClick={() => setSelectedSubCard(null)} 
+        className="absolute top-4 right-4 bg-red-500 text-white px-3 py-2 rounded-full text-lg"
+      >
+        ✕
+      </button>
+    </div>
+  </div>
+)}
+
+
+
       {/* Popup de "Información no disponible" */}
       {isPopupVisible && (
-        <div className="fixed top-0 left-0 w-full h-full bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-xs">
-            <h3 className="text-xl font-semibold text-center">Información no disponible</h3>
-            <p className="text-center text-sm mt-2">Esta tarjeta no tiene un enlace disponible.</p>
-            <div className="flex justify-center mt-4">
-              <button
-                onClick={closePopup}
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg"
-              >
-                Cerrar
-              </button>
-            </div>
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-xs text-center">
+            <h3 className="text-xl font-semibold">Archivo no disponible</h3>
+            <p className="text-sm mt-2">El enlace asociado a esta tarjeta no está disponible en este momento.</p>
+            <button onClick={() => setPopupVisible(false)} className="mt-4 bg-[#2e63a6] text-white px-4 py-2 rounded-lg">
+              Cerrar
+            </button>
           </div>
         </div>
       )}

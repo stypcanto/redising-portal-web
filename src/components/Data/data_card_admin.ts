@@ -1,6 +1,6 @@
 export const cardsData_admin = {
     DireccionGeneral: [
-      { title: "Gestión de Procesos", description: "Mejora Continua de Calidad", icon: "/images/dev-icon-60.svg", url: "https://www.google.com" },
+      { title: "Gestión de Procesos", description: "Mejora Continua de Calidad", icon: "/images/dev-icon-60.svg", url: "" },
       { title: "Gestión de la Reputación", description: "R. de Imágen y Comunicación", icon: "/images/dev-icon-60.svg", url: "" },
     ],
     SDGT: [
@@ -23,5 +23,10 @@ export const cardsData_admin = {
       { title: "Presupuesto", description: "R. de Presupuesto", icon: "/images/dev-icon-60.svg", url: "/link15" },
       { title: "Contable", description: "R. de Contable", icon: "/images/dev-icon-60.svg", url: "/link16" },
     ],
+    
   };
   
+  const extraOptions = [
+    { title: "Opción 1", description: "Descripción 1", icon: "/images/dev-icon-60.svg" },
+    { title: "Opción 2", description: "Descripción 2", icon: "/images/dev-icon-60.svg" },
+  ];
