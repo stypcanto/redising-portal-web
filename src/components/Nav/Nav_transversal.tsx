@@ -75,7 +75,7 @@ const NavTransversal = () => {
             rel="noopener noreferrer"
             className="block  text-sm border-b-1   text-gray-700 hover:text-white hover:bg-[#2e63a6] py-2 px-4 rounded transition duration-300"
           >
-            Power BI Indicadores
+            Power BI
           </Link>
         </li>
 
