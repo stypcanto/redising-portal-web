@@ -46,19 +46,19 @@ const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | 
   };
 
   return (
-    <div key={selectedCard} className="bg-white p-8 rounded-xl shadow-lg min-h-[300px]">
+    <div key={selectedCard} className="bg-white p-4 sm:p-8 rounded-xl shadow-lg min-h-[300px]">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {cardsadmin.map((card) => (
           <div
             key={card.title}
-            className="bg-blue-50 p-2 rounded-lg shadow-lg hover:bg-blue-100 transition cursor-pointer"
+            className="bg-blue-50 p-4 sm:p-2 rounded-lg shadow-lg hover:bg-blue-100 transition cursor-pointer"
             onClick={() => handleCardClick(card.title, card.url)}
           >
             <div className="flex items-center">
-              <img src={card.icon || "/images/icono-defecto.png"} alt={card.title} className="w-8 h-8 mr-4" />
-              <div className="flex flex-col">
-                <h3 className="text-sm font-semibold">{card.title}</h3>
-                <p className="text-[#2e63a6] text-xs">{card.description}</p>
+              <img src={card.icon || "/images/icono-defecto.png"} alt={card.title} className="w-6 sm:w-8 h-6 sm:h-8 mr-4" />
+              <div className="items-start flex flex-col">
+                <h3 className="text-sm sm:text-base font-semibold">{card.title}</h3>
+                <p className="text-[#2e63a6] text-xs sm:text-sm ">{card.description}</p>
               </div>
             </div>
           </div>
@@ -68,13 +68,13 @@ const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | 
       {/* Card emergente con nuevas opciones */}
       {selectedSubCard && (
         <div className="fixed inset-0 bg-[#2e63a6]/50 flex justify-center items-center z-50">
-          <div className="w-[80%] max-w-3xl bg-white p-8 rounded-2xl shadow-2xl relative">
+          <div className="w-[90%] sm:w-[80%] max-w-3xl bg-white p-8 rounded-2xl shadow-2xl relative">
             <h3 className="text-xl font-semibold text-[#2e63a6] mb-6">{selectedSubCard}</h3>
             
-         {/* Card emergente con nuevas opciones para Telemedicina. */}
+            {/* Card emergente con nuevas opciones para Telemedicina. */}
             {telemedicinaNavActive ? (
               <div>
-                <nav className="flex justify-around bg-blue-100 p-3 rounded-lg shadow-md mb-4 gap-2">
+                <nav className="flex justify-between sm:justify-around bg-blue-100 p-3 rounded-lg shadow-md mb-4 gap-2">
                   {["Coord. de Gestión de Citas", "Coord de TC / TO / TINT", "Coord. de TM / TU", "Coord e TAD", "Coord. General"].map((navOption) => (
                     <button 
                       key={navOption} 
@@ -89,7 +89,7 @@ const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | 
                 </nav>
 
                 {/* 🔹 Renderizar opciones según selección en el NAV */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                   {selectedTelemedicinaOption && telemedicinaOptionsData[selectedTelemedicinaOption] ? (
                     telemedicinaOptionsData[selectedTelemedicinaOption].map((option) => (
                       <a
@@ -109,8 +109,7 @@ const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | 
                 </div>
               </div>
             ) : (
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 {extraOptions.map((option) => (
                   <a
                     key={option.title}

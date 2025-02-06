@@ -5,11 +5,11 @@ export const cardsData_admin = {
     ],
     SDGT: [
       { title: "Telegestión", description: "Gestores Territoriales", icon: "/images/dev-icon-60.svg", url: "/link3" },
-      { title: "Telemedicina.", description: "Coordinadores", icon: "/images/dev-icon-60.svg", url: "/link4" },
-      { title: "Telemedicina", description: "G. de Citas de Pacientes", icon: "/images/dev-icon-60.svg", url: "" },
+      { title: "Telemedicina.", description: "Coordinadores de área", icon: "/images/dev-icon-60.svg", url: "/link4" },
+      { title: "Telemedicina", description: "Gestoras de Citas", icon: "/images/dev-icon-60.svg", url: "" },
       { title: "Teleformación en Salud", description: "Telecapacitación / TeleIEC", icon: "/images/dev-icon-60.svg", url: "" },
-      { title: "Telemedicina", description: "G. de Citas de Prof. de Salud", icon: "/images/dev-icon-60.svg", url: "" },
-      { title: "Gestión TI", description: "R. de TI", icon: "/images/dev-icon-60.svg", url: "" },
+      { title: "Telemedicina", description: "Herramientas de programación TI", icon: "/images/dev-icon-60.svg", url: "" },
+      { title: "Gestión TI", description: "Responsables de soporte TI", icon: "/images/dev-icon-60.svg", url: "" },
     ],
     SDRIST: [
       { title: "Diseño Institucional", description: "R. de regulación, iniciativas y servicios en Telesalud", icon: "/images/dev-icon-60.svg", url: "" },
