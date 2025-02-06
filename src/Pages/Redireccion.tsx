@@ -57,7 +57,7 @@ const Redireccion = () => {
             {/* Menú de opciones con estado activo */}
             <nav className="bg-white py-2 mb-4 shadow-lg rounded-xl">
               <div className="max-w-4xl mx-auto text-center">
-                <ul className="flex justify-center sm:space-x-6 sm:flex-wrap p-2">
+                <ul className="flex justify-center space-x-1 sm:space-x-6 sm:flex-wrap p-2">
                   {menuOptions.map(({ key, label }) => (
                     <li key={key}>
                       <button

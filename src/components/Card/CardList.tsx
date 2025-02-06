@@ -68,7 +68,8 @@ const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | 
       {/* Card emergente con nuevas opciones */}
       {selectedSubCard && (
         <div className="fixed inset-0 bg-[#2e63a6]/50 flex justify-center items-center z-50">
-          <div className="w-[90%] sm:w-[80%] max-w-3xl bg-white p-8 rounded-2xl shadow-2xl relative">
+          <div className="w-[90%] sm:w-[80%] md:w-[70%] max-w-3xl bg-white sm:mt-0 mt-64  p-8 rounded-2xl shadow-2xl relative">
+
             <h3 className="text-xl font-semibold text-[#2e63a6] mb-6">{selectedSubCard}</h3>
             
             {/* Card emergente con nuevas opciones para Telemedicina. */}
@@ -108,7 +109,9 @@ const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | 
                   )}
                 </div>
               </div>
+              
             ) : (
+              
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 {extraOptions.map((option) => (
                   <a
@@ -116,10 +119,10 @@ const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | 
                     href={option.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="bg-gray-100 p-4 rounded-lg shadow-md flex items-center gap-3 hover:bg-gray-200 transition-transform"
+                    className="bg-gray-100 p-2 md:p-3  sm:p-4 rounded-lg shadow-md flex items-center gap-3 hover:bg-gray-200 transition-transform"
                   >
                     <img src={option.icon} alt={option.title} className="w-10 h-10" />
-                    <h4 className="font-medium">{option.title}</h4>
+                    <h4 className="text-sm md:text-xs sm:text-base font-medium">{option.title}</h4>
                   </a>
                 ))}
               </div>

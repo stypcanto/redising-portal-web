@@ -6,9 +6,9 @@ export const cardsData_admin = {
     SDGT: [
       { title: "Telegestión", description: "Gestores Territoriales", icon: "/images/dev-icon-60.svg", url: "/link3" },
       { title: "Telemedicina.", description: "Coordinadores de área", icon: "/images/dev-icon-60.svg", url: "/link4" },
-      { title: "Telemedicina", description: "Gestoras de Citas", icon: "/images/dev-icon-60.svg", url: "" },
+      { title: "Telemedicina..", description: "Gestoras de Citas", icon: "/images/dev-icon-60.svg", url: "" },
       { title: "Teleformación en Salud", description: "Telecapacitación / TeleIEC", icon: "/images/dev-icon-60.svg", url: "" },
-      { title: "Telemedicina", description: "Herramientas de programación TI", icon: "/images/dev-icon-60.svg", url: "" },
+      { title: "Telemedicina...", description: "Herramientas de progr. TI", icon: "/images/dev-icon-60.svg", url: "" },
       { title: "Gestión TI", description: "Responsables de soporte TI", icon: "/images/dev-icon-60.svg", url: "" },
     ],
     SDRIST: [
