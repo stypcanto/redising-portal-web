@@ -1,79 +1,85 @@
-import { useState } from "react";
-import { info_navprincipal } from "../Data/info_navprincipal";
-import { info_telegestion } from "../Data/info_telegestion"; 
-import { info_coord_area } from "../Data/info_coord_area";
-import { info_gestoradecitas } from "../Data/info_gestoradecitas";
-import { info_telecapa_teleiec } from "../Data/info_telecapa_teleiec";
-import { info_herra_TI } from "../Data/info_herra_TI";
-import { info_gestionTI } from "../Data/info_gestionTI";
+import { useState } from "react"; // Importa el hook useState de React para manejar el estado
+import { info_navprincipal } from "../Data/info_navprincipal"; // Importa los datos de navegación principal
+import { info_gestionterritorial } from "../Data/info_gestionterritorial"; // Importa los datos de telegestión
+import { info_coord_area } from "../Data/info_coord_area"; // Importa los datos de coordinadores de área
+import { info_gestoradecitas } from "../Data/info_gestoradecitas"; // Importa los datos de gestores de citas
+import { info_telecapa_teleiec } from "../Data/info_telecapa_teleiec"; // Importa los datos de telecapacitación / TeleIEC
+import { info_herra_TI } from "../Data/info_herra_TI"; // Importa los datos de herramientas TI
+import { info_gestionTI } from "../Data/info_gestionTI"; // Importa los datos de gestión TI
 
-import "../../Styles/modal.css";
+import "../../Styles/modal.css"; // Importa los estilos CSS para los modales
 
-// Definición de los tipos de datos para las tarjetas
 type NavIndex = {
-  title: string;
-  description: string;
-  icon: string;
-  url?: string;
+  title: string; // Título de la tarjeta o sección
+  description: string; // Descripción de la tarjeta o sección
+  icon: string; // Icono asociado a la tarjeta o sección
+  url?: string; // URL opcional a la que se puede redirigir
 };
 
 type NavPrincipalAreas = {
-  DireccionGeneral: NavIndex[];
-  SDGT: NavIndex[];
-  SDRIST: NavIndex[];
-  DireccionDespacho: NavIndex[];
+  DireccionGeneral: NavIndex[]; // Array de tarjetas para Dirección General
+  SDGT: NavIndex[]; // Array de tarjetas para SDGT
+  SDRIST: NavIndex[]; // Array de tarjetas para SDRIST
+  DireccionDespacho: NavIndex[]; // Array de tarjetas para Dirección de Despacho
 };
 
 const List_SDGT = ({ selectedCard }: { selectedCard: keyof NavPrincipalAreas | null }) => {
-  const [activeSection, setActiveSection] = useState<string | null>(null);
-  const [selectedInfotelegestion, setSelectedInfotelegestion] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false); // Estado para el modal
+  const [activeSection, setActiveSection] = useState<string | null>(null); // Estado para la sección activa
+  const [selectedOptionCard, setSelectedOptionCard] = useState<string | null>(null); // Estado para la opción de tarjeta seleccionada
+  const [showModal, setShowModal] = useState(false); // Estado para mostrar u ocultar el modal
 
-  const handleShowModal = () => setShowModal(true);
-  const handleCloseModal = () => setShowModal(false);
+  const handleShowModal = () => setShowModal(true); // Función para mostrar el modal
+  const handleCloseModal = () => setShowModal(false); // Función para cerrar el modal
 
-  const cardsadmin = selectedCard ? [...(info_navprincipal[selectedCard] || [])] : [];
+  const cardsadmin = selectedCard ? [...(info_navprincipal[selectedCard] || [])] : []; // Carga las tarjetas dependiendo de la sección seleccionada
 
   if (!cardsadmin.length) {
-    return <div>No se encontraron tarjetas para la sección seleccionada.</div>;
+    return <div>No se encontraron tarjetas para la sección seleccionada.</div>; // Si no hay tarjetas para la sección, muestra un mensaje
   }
 
   const handleCardClick = (title: string, url?: string) => {
-    const standardSubCards = ["Telegestión", "Gestión TI", "Herramientas TI", "Gestión de Citas", "Teleformación en Salud"];
+    const standardSubCards = [
+      "Gestores Territoriales", 
+      "Gestoras de Citas", 
+      "Herramientas de progr. TI", 
+      "Gestión TI", 
+      "Telecapacitación / TeleIEC"
+    ];
     
-    if (title.trim() === "Telemedicina." || standardSubCards.includes(title)) {
+    // Si la tarjeta es una de las opciones estándar, activa la sección correspondiente
+    if (title.trim() === "Coordinadores de área" || standardSubCards.includes(title)) {
       setActiveSection(title);
     } else if (!url?.trim()) {
-      handleShowModal();
+      handleShowModal(); // Si no hay URL, muestra el modal
     } else {
-      window.open(url, "_blank");
+      window.open(url, "_blank"); // Si hay URL, abre en una nueva pestaña
     }
   };
 
-  // Obtener el array de información basado en la sección activa
-  const selectedInfoArray = 
-    activeSection === "Telegestión" ? info_telegestion :
-    activeSection === "Gestión de Citas" ? info_gestoradecitas :
-    activeSection === "Teleformación en Salud" ? info_telecapa_teleiec :
-    activeSection === "Herramientas TI" ? info_herra_TI :
+  const selectedInfoArray =
+    activeSection === "Gestores Territoriales" ? info_gestionterritorial :
+    activeSection === "Gestoras de Citas" ? info_gestoradecitas :
+    activeSection === "Herramientas de progr. TI" ? info_herra_TI :
     activeSection === "Gestión TI" ? info_gestionTI :
-    [];
+    activeSection === "Telecapacitación / TeleIEC" ? info_telecapa_teleiec :
+    []; // Determina qué información mostrar según la sección activa
 
   return (
     <div className="bg-white p-4 rounded-xl shadow-lg min-h-[300px]">
       {activeSection ? (
         <div>
           <h3 className="text-xl font-semibold text-[#2e63a6] mb-6">{activeSection}</h3>
-          
-          {activeSection === "Telemedicina." ? (
+
+          {activeSection === "Coordinadores de área" && (
             <div>
               <nav className="grid grid-cols-1 sm:grid-cols-2 md:flex md:justify-between bg-blue-100 p-3 rounded-lg shadow-md mb-4 gap-2">
+                {/* Muestra botones para diferentes opciones de coordinadores de área */}
                 {["Coord. de Gestión de Citas", "Coord de TC / TO / TINT", "Coord. de TM / TU", "Coord e TAD", "Coord. General"].map((navOption) => (
                   <button 
                     key={navOption} 
-                    onClick={() => setSelectedInfotelegestion(navOption)}
+                    onClick={() => setSelectedOptionCard(navOption)}
                     className={`w-full md:w-auto px-4 py-2 rounded-lg text-sm text-center transition-transform duration-200 hover:scale-105 ${
-                      selectedInfotelegestion === navOption ? "bg-[#2e63a6] text-white" : "bg-white text-[#2e63a6]"
+                      selectedOptionCard === navOption ? "bg-[#2e63a6] text-white" : "bg-white text-[#2e63a6]"
                     }`}
                   >
                     {navOption}
@@ -81,8 +87,9 @@ const List_SDGT = ({ selectedCard }: { selectedCard: keyof NavPrincipalAreas | n
                 ))}
               </nav>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {selectedInfotelegestion && info_coord_area[selectedInfotelegestion] ? (
-                  info_coord_area[selectedInfotelegestion].map((option) => (
+                {/* Muestra las opciones del coordinador de área seleccionado */}
+                {selectedOptionCard && info_coord_area[selectedOptionCard] ? (
+                  info_coord_area[selectedOptionCard].map((option) => (
                     <a
                       key={option.title}
                       href={option.url}
@@ -91,7 +98,7 @@ const List_SDGT = ({ selectedCard }: { selectedCard: keyof NavPrincipalAreas | n
                       className="bg-gray-100 p-4 rounded-lg shadow-md flex items-center gap-3 hover:bg-gray-200 transition-transform"
                     >
                       <img src={option.icon} alt={option.title} className="w-10 h-10" />
-                      <h4 className="font-medium">{option.title}</h4>
+                      <h4 className="text-sm md:text-xs sm:text-base font-medium">{option.title}</h4>
                     </a>
                   ))
                 ) : (
@@ -99,26 +106,66 @@ const List_SDGT = ({ selectedCard }: { selectedCard: keyof NavPrincipalAreas | n
                 )}
               </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {Array.isArray(selectedInfoArray) && selectedInfoArray.length > 0 ? (
-                selectedInfoArray.map((option) => (
-                  <a
-                    key={option.title}
-                    href={option.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-gray-100 p-4 rounded-lg shadow-md flex items-center gap-3 hover:bg-gray-200 transition-transform"
-                  >
-                    <img src={option.icon} alt={option.title} className="w-10 h-10" />
-                    <h4 className="text-sm md:text-xs sm:text-base font-medium">{option.title}</h4>
-                  </a>
-                ))
-              ) : (
-                <p className="text-gray-500">No hay información disponible.</p>
-              )}
+          )}
+
+          {activeSection === "Telecapacitación / TeleIEC" && (
+            <div>
+              <nav className="grid grid-cols-1 sm:grid-cols-2 md:flex md:justify-center bg-blue-100 p-3 rounded-lg shadow-md mb-4 gap-2">
+                {/* Muestra botones para Telecapacitación y TeleIEC */}
+                {["Telecapacitaciones", "TeleIEC"].map((navOption) => (
+                    <button 
+                      key={navOption} 
+                      onClick={() => setSelectedOptionCard(navOption)}
+                      className={`w-full md:w-auto px-4 py-2 rounded-lg text-sm text-center transition-transform duration-200 hover:scale-105 ${
+                      selectedOptionCard === navOption ? "bg-[#2e63a6] text-white" : "bg-white text-[#2e63a6]"
+                     }`}
+                         >
+                     {navOption}
+                   </button>
+                    ))}
+            </nav>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {/* Muestra las opciones correspondientes a la opción seleccionada (Telecapacitación o TeleIEC) */}
+                {selectedOptionCard && info_telecapa_teleiec[selectedOptionCard] ? (
+                  info_telecapa_teleiec[selectedOptionCard].map((option) => (
+                    <a
+                      key={option.title}
+                      href={option.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-gray-100 p-4 rounded-lg shadow-md flex items-center gap-3 hover:bg-gray-200 transition-transform"
+                    >
+                      <img src={option.icon} alt={option.title} className="w-10 h-10" />
+                      <h4 className="text-sm md:text-xs sm:text-base font-medium">{option.title}</h4>
+                    </a>
+                  ))
+                ) : (
+                  <p className="text-gray-500">Seleccione una opción</p>
+                )}
+              </div>
             </div>
           )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {/* Muestra las tarjetas según la información seleccionada */}
+            {Array.isArray(selectedInfoArray) && selectedInfoArray.length > 0 ? (
+              selectedInfoArray.map((option) => (
+                <a
+                  key={option.title}
+                  href={option.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-gray-100 p-4 rounded-lg shadow-md flex text-left items-center gap-3 hover:bg-gray-200 transition-transform"
+                >
+                  <img src={option.icon} alt={option.title} className="w-10 h-10" />
+                  <h4 className="text-sm md:text-xs sm:text-base font-medium">{option.title}</h4>
+                </a>
+              ))
+            ) : (
+              <p className="text-gray-500 mb-10"></p>
+            )}
+          </div>
 
           <button 
             onClick={() => setActiveSection(null)} 
@@ -128,24 +175,20 @@ const List_SDGT = ({ selectedCard }: { selectedCard: keyof NavPrincipalAreas | n
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Muestra las tarjetas de la sección principal */}
           {cardsadmin.map((card) => (
             <div
               key={card.title}
               className="bg-blue-50 p-4 rounded-lg shadow-lg hover:bg-blue-100 transition cursor-pointer"
               onClick={() => handleCardClick(card.title, card.url)}
             >
-              <div className="flex items-center">
-                <img src={card.icon || "/images/icono-defecto.png"} alt={card.title} className="w-6 h-6 mr-4" />
-                <div className="items-start flex flex-col">
-                  <h3 className="text-sm font-semibold">{card.title}</h3>
-                  <p className="text-[#2e63a6] text-xs">{card.description}</p>
-                </div>
-              </div>
+              <h3 className="text-sm font-semibold">{card.title}</h3>
             </div>
           ))}
         </div>
       )}
 
+      {/* Muestra el modal si está activo */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">

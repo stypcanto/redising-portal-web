@@ -4,12 +4,12 @@ export const info_navprincipal = {
       { title: "Gestión de la Reputación", description: "R. de Imágen y Comunicación", icon: "/images/dev-icon-60.svg", url: "" },
     ],
     SDGT: [
-      { title: "Telegestión", description: "Gestores Territoriales", icon: "/images/dev-icon-60.svg", url: "/link3" },
-      { title: "Telemedicina.", description: "Coordinadores de área", icon: "/images/dev-icon-60.svg", url: "/link4" },
-      { title: "Telemedicina..", description: "Gestoras de Citas", icon: "/images/dev-icon-60.svg", url: "" },
-      { title: "Teleformación en Salud", description: "Telecapacitación / TeleIEC", icon: "/images/dev-icon-60.svg", url: "" },
-      { title: "Telemedicina...", description: "Herramientas de progr. TI", icon: "/images/dev-icon-60.svg", url: "" },
-      { title: "Gestión TI", description: "Responsables de soporte TI", icon: "/images/dev-icon-60.svg", url: "" },
+      { title: "Gestores Territoriales", description: "Telegestión", icon: "/images/dev-icon-60.svg", url: "" },
+      { title: "Coordinadores de área", description: "Telemedicina", icon: "/images/dev-icon-60.svg", url: "" },
+      { title: "Gestoras de Citas", description: "Telemedicina", icon: "/images/dev-icon-60.svg", url: "" },
+      { title: "Telecapacitación / TeleIEC", description: "Teleformación en Salud", icon: "/images/dev-icon-60.svg", url: "" },
+      { title: "Herramientas de progr. TI", description: "Telemedicina", icon: "/images/dev-icon-60.svg", url: "" },
+      { title: "Gestión TI", description: "Telegestión", icon: "/images/dev-icon-60.svg", url: "" },
     ],
     SDRIST: [
       { title: "Diseño Institucional", description: "R. de regulación, iniciativas y servicios en Telesalud", icon: "/images/dev-icon-60.svg", url: "" },
