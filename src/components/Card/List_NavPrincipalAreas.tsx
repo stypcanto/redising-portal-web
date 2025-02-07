@@ -1,30 +1,30 @@
 import { useState } from "react";
-import { cardsData_admin } from "../Data/data_card_admin";
-import { extraOptions } from "../Data/data_minicard"; 
-import { telemedicinaOptionsData } from "../Data/telemedicinaOptionData";
+import { info_navprincipal } from "../Data/info_navprincipal";
+import { info_telegestion } from "../Data/info_telegestion"; 
+import { info_coord_area } from "../Data/info_coord_area";
 import "../../Styles/modal.css"
 
 // Definición de los tipos de datos para las tarjetas
 // Esto ayuda a mantener el código más estructurado y con tipado fuerte
-type CardType = {
+type NavIndex = {
   title: string;
   description: string;
   icon: string;
   url?: string;
 };
 
-type CardsDataAdminType = {
-  DireccionGeneral: CardType[];
-  SDGT: CardType[];
-  SDRIST: CardType[];
-  DireccionDespacho: CardType[];
+type NavPrincipalAreas = {
+  DireccionGeneral: NavIndex[];
+  SDGT: NavIndex[];
+  SDRIST:NavIndex[];
+  DireccionDespacho: NavIndex[];
 };
 
-const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | null }) => {
+const List_NavPrincipalAreas = ({ selectedCard }: { selectedCard: keyof NavPrincipalAreas| null }) => {
   // Estado para manejar qué sección está activa y se mostrará en la página
   const [activeSection, setActiveSection] = useState<string | null>(null);
   // Estado para manejar la opción seleccionada dentro de Telemedicina
-  const [selectedTelemedicinaOption, setSelectedTelemedicinaOption] = useState<string | null>(null);
+  const [selectedInfotelegestion, setSelectedInfotelegestion] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false); // Estado para el modal
 
 
@@ -37,7 +37,7 @@ const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | 
   };
 
   // Obtiene las tarjetas correspondientes a la sección seleccionada
-  const cardsadmin = selectedCard ? [...(cardsData_admin[selectedCard] || [])] : [];
+  const cardsadmin = selectedCard ? [...(info_navprincipal[selectedCard] || [])] : [];
 
   if (!cardsadmin.length) {
     return <div>No se encontraron tarjetas para la sección seleccionada.</div>;
@@ -66,7 +66,7 @@ const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | 
         <div>
           <h3 className="text-xl font-semibold text-[#2e63a6] mb-6">{activeSection}</h3>
           
-          {/* Si la sección es Telemedicina, muestra sus opciones */}
+          {/* Si la sección es Telemedicina., muestra sus opciones */}
           {activeSection === "Telemedicina." ? (
             <div>
             <nav className="grid grid-cols-1 sm:grid-cols-2 md:flex md:justify-between bg-blue-100 p-3 rounded-lg shadow-md mb-4 gap-2">
@@ -79,9 +79,9 @@ const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | 
   ].map((navOption) => (
     <button 
       key={navOption} 
-      onClick={() => setSelectedTelemedicinaOption(navOption)}
+      onClick={() => setSelectedInfotelegestion(navOption)}
       className={`w-full md:w-auto px-4 py-2 rounded-lg text-sm text-center transition-transform duration-200 hover:scale-105 ${
-        selectedTelemedicinaOption === navOption ? "bg-[#2e63a6] text-white" : "bg-white text-[#2e63a6]"
+        selectedInfotelegestion === navOption ? "bg-[#2e63a6] text-white" : "bg-white text-[#2e63a6]"
       }`}
     >
       {navOption}
@@ -93,8 +93,8 @@ const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | 
 
               {/* Renderiza opciones según la selección en el NAV */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {selectedTelemedicinaOption && telemedicinaOptionsData[selectedTelemedicinaOption] ? (
-                  telemedicinaOptionsData[selectedTelemedicinaOption].map((option) => (
+                {selectedInfotelegestion && info_coord_area[selectedInfotelegestion] ? (
+                  info_coord_area[selectedInfotelegestion].map((option) => (
                     <a
                       key={option.title}
                       href={option.url}
@@ -114,7 +114,7 @@ const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | 
           ) : (
             // Si es otra sección, muestra las opciones generales
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {extraOptions.map((option) => (
+              {info_telegestion.map((option) => (
                 <a
                   key={option.title}
                   href={option.url}
@@ -124,6 +124,7 @@ const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | 
                 >
                   <img src={option.icon} alt={option.title} className="w-10 h-10" />
                   <h4 className="text-sm md:text-xs sm:text-base font-medium">{option.title}</h4>
+                  
                 </a>
               ))}
             </div>
@@ -182,4 +183,4 @@ const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | 
   );
 };
 
-export default CardsList;
+export default List_NavPrincipalAreas;

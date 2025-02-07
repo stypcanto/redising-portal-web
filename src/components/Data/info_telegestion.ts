@@ -1,4 +1,4 @@
-export const extraOptions = [
+export const info_telegestion = [
   
   { title: "Plan de Telegestión", icon: "/images/dev-icon-60.svg", url: "https://segurosocialdesalud-my.sharepoint.com/:f:/g/personal/cenate_calidad_essalud_gob_pe/Erxei2PsaMhAnzYa-CzaMXYBQFfT-s8tg991yZS3S47lZQ?e=AODRgh" },
   { title: "Diagnóstico", icon: "/images/dev-icon-60.svg", url: "https://segurosocialdesalud-my.sharepoint.com/:f:/g/personal/cenate_calidad_essalud_gob_pe/EqKq8egU4LRArGXLGbc4L2cBM6CDZCxenR8aottlGJjIng?e=6vYfpA" },

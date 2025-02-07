@@ -1,4 +1,4 @@
-export const cardsData_admin = {
+export const info_navprincipal = {
     DireccionGeneral: [
       { title: "Gestión de Procesos", description: "Mejora Continua de Calidad", icon: "/images/dev-icon-60.svg", url: "" },
       { title: "Gestión de la Reputación", description: "R. de Imágen y Comunicación", icon: "/images/dev-icon-60.svg", url: "" },

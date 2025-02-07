@@ -1,4 +1,4 @@
-export const telemedicinaOptionsData: Record<string, { title: string; icon: string; url?: string }[]> = {
+export const info_coord_area: Record<string, { title: string; icon: string; url?: string }[]> = {
     "Coord. de Gestión de Citas": [
       { title: "Auditoría de Gestión de Citas", icon: "/images/dev-icon-60.svg", url: "https://segurosocialdesalud-my.sharepoint.com/:f:/g/personal/cenate_calidad_essalud_gob_pe/Em0f_nPvQ_RHq7LS4N34EgMB-F8RyR2y-3s0fG5iPYbMRA" },
       { title: "Incidencias de Mesa de Ayuda", icon: "/images/dev-icon-60.svg", url: "https://segurosocialdesalud-my.sharepoint.com/:f:/g/personal/cenate_calidad_essalud_gob_pe/ElJh5VqMrKNFnqBwxTFTK5wB6yovvHncHniHZIXGalCHAA?e=ZfIruD" },

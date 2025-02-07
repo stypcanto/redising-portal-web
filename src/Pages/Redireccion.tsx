@@ -4,7 +4,7 @@ import Footer_azul from "../components/Footer/Footer_azul";
 import Header_template from "../components/Header/Header_template";
 import Nav_intro from "../components/Nav/Nav_intro";
 import NavTransversal from "../components/Nav/Nav_transversal";
-import CardsList from "../components/Card/CardList";
+import List_NavPrincipalAreas from "../components/Card/List_NavPrincipalAreas";
 import { CardsDataAdminType } from "../types/CardsDataAdminType"; // Import the type
 
 const Redireccion = () => {
@@ -75,7 +75,7 @@ const Redireccion = () => {
             </nav>
 
             {/* Muestra los cards según la selección */}
-            <CardsList selectedCard={selectedCard} />
+            <List_NavPrincipalAreas selectedCard={selectedCard} />
           </div>
         </div>
 
