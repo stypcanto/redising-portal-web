@@ -69,25 +69,27 @@ const CardsList = ({ selectedCard }: { selectedCard: keyof CardsDataAdminType | 
           {/* Si la sección es Telemedicina, muestra sus opciones */}
           {activeSection === "Telemedicina." ? (
             <div>
-              <nav className="flex justify-between bg-blue-100 p-3 rounded-lg shadow-md mb-4 gap-2">
-                {[
-                  "Coord. de Gestión de Citas", 
-                  "Coord de TC / TO / TINT", 
-                  "Coord. de TM / TU", 
-                  "Coord e TAD", 
-                  "Coord. General"
-                ].map((navOption) => (
-                  <button 
-                    key={navOption} 
-                    onClick={() => setSelectedTelemedicinaOption(navOption)}
-                    className={`px-4 py-2 rounded-lg text-sm ${
-                      selectedTelemedicinaOption === navOption ? "bg-[#2e63a6] text-white" : "bg-white text-[#2e63a6]"
-                    }`}
-                  >
-                    {navOption}
-                  </button>
-                ))}
-              </nav>
+            <nav className="grid grid-cols-1 sm:grid-cols-2 md:flex md:justify-between bg-blue-100 p-3 rounded-lg shadow-md mb-4 gap-2">
+  {[
+    "Coord. de Gestión de Citas", 
+    "Coord de TC / TO / TINT", 
+    "Coord. de TM / TU", 
+    "Coord e TAD", 
+    "Coord. General"
+  ].map((navOption) => (
+    <button 
+      key={navOption} 
+      onClick={() => setSelectedTelemedicinaOption(navOption)}
+      className={`w-full md:w-auto px-4 py-2 rounded-lg text-sm text-center transition-transform duration-200 hover:scale-105 ${
+        selectedTelemedicinaOption === navOption ? "bg-[#2e63a6] text-white" : "bg-white text-[#2e63a6]"
+      }`}
+    >
+      {navOption}
+    </button>
+  ))}
+</nav>
+
+
 
               {/* Renderiza opciones según la selección en el NAV */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
