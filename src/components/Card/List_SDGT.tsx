@@ -97,7 +97,7 @@ const List_SDGT = ({ selectedCard }: { selectedCard: keyof NavPrincipalAreas | n
                       rel="noopener noreferrer"
                       className="bg-gray-100 p-4 rounded-lg shadow-md flex items-center gap-3 hover:bg-gray-200 transition-transform"
                     >
-                      <img src={option.icon} alt={option.title} className="w-10 h-10" />
+                      <img src={option.icon} alt={option.title} className="w-8 h-8" />
                       <h4 className="text-sm md:text-xs sm:text-base font-medium">{option.title}</h4>
                     </a>
                   ))
@@ -136,7 +136,7 @@ const List_SDGT = ({ selectedCard }: { selectedCard: keyof NavPrincipalAreas | n
                       rel="noopener noreferrer"
                       className="bg-gray-100 p-4 rounded-lg shadow-md flex items-center gap-3 hover:bg-gray-200 transition-transform"
                     >
-                      <img src={option.icon} alt={option.title} className="w-10 h-10" />
+                      <img src={option.icon} alt={option.title} className="w-8 h-8" />
                       <h4 className="text-sm md:text-xs sm:text-base font-medium">{option.title}</h4>
                     </a>
                   ))
@@ -158,7 +158,7 @@ const List_SDGT = ({ selectedCard }: { selectedCard: keyof NavPrincipalAreas | n
                   rel="noopener noreferrer"
                   className="bg-gray-100 p-4 rounded-lg shadow-md flex text-left items-center gap-3 hover:bg-gray-200 transition-transform"
                 >
-                  <img src={option.icon} alt={option.title} className="w-10 h-10" />
+                  <img src={option.icon} alt={option.title} className="w-8 h-8" />
                   <h4 className="text-sm md:text-xs sm:text-base font-medium">{option.title}</h4>
                 </a>
               ))
@@ -179,9 +179,10 @@ const List_SDGT = ({ selectedCard }: { selectedCard: keyof NavPrincipalAreas | n
           {cardsadmin.map((card) => (
             <div
               key={card.title}
-              className="bg-blue-50 p-4 rounded-lg shadow-lg hover:bg-blue-100 transition cursor-pointer"
+              className="bg-blue-50 flex items-center gap-3 p-4 rounded-lg shadow-lg hover:bg-blue-100 transition cursor-pointer"
               onClick={() => handleCardClick(card.title, card.url)}
             >
+               <img src={card.icon} alt={card.title} className="w-8 h-8" />
               <h3 className="text-sm font-semibold">{card.title}</h3>
             </div>
           ))}
