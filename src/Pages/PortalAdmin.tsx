@@ -4,10 +4,10 @@ import Footer_azul from "../components/Footer/Footer_azul";
 import Header_template from "../components/Header/Header_template";
 import Nav_intro from "../components/Nav/Nav_intro";
 import NavTransversal from "../components/Nav/Nav_transversal";
-import List_NavPrincipalAreas from "../components/Card/List_NavPrincipalAreas";
+import List_SDGT from "../components/Card/List_SDGT";
 import { CardsDataAdminType } from "../types/CardsDataAdminType"; // Import the type
 
-const Redireccion = () => {
+const PortalAdmin = () => {
   // Inicializamos con "DireccionGeneral"
   const [selectedCard, setSelectedCard] = useState<keyof CardsDataAdminType>("DireccionGeneral");
 
@@ -75,7 +75,7 @@ const Redireccion = () => {
             </nav>
 
             {/* Muestra los cards según la selección */}
-            <List_NavPrincipalAreas selectedCard={selectedCard} />
+            <List_SDGT selectedCard={selectedCard} />
           </div>
         </div>
 
@@ -87,4 +87,4 @@ const Redireccion = () => {
   );
 };
 
-export default Redireccion;
+export default PortalAdmin;

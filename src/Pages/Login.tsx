@@ -11,7 +11,7 @@ const Login = () => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (email === "admin@cenate.com" && password === "admin") {
-      navigate("/redireccion");
+      navigate("/portaladmin");  // Redirige a la página de administrador
     } else {
       setError("Usuario o contraseña incorrectos.");
     }
