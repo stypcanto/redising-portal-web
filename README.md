@@ -1,50 +1,68 @@
-# React + TypeScript + Vite
+# Sistema de Autenticación con React, Node.js y PostgreSQL
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Este proyecto es un sistema de autenticación completo con **React** en el frontend y **Node.js** con **Express** en el backend. Proporciona las funcionalidades esenciales para la gestión de usuarios y autenticación segura, usando las mejores prácticas de seguridad.
 
-Currently, two official plugins are available:
+Comparto este proyecto ya que es una muy buena herramienta para entrenar como funciona el front-end y el back-end combinando multiples tecnologías:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Frontend: React, Axios
+- Backend: Node.js, Express
+- Base de datos: PostgreSQL
+- Autenticación: JWT, bcrypt
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+## 🚀 Funcionalidades
 
-- Configure the top-level `parserOptions` property like this:
+- **Registro de usuarios**: Los usuarios pueden registrarse proporcionando un nombre de usuario y contraseña.
+- **Inicio de sesión**: Autenticación mediante nombre de usuario y contraseña.
+- **Encriptación de contraseñas**: Las contraseñas se encriptan de manera segura usando **bcrypt**.
+- **JSON Web Tokens (JWT)**: Implementación de JWT para una autenticación segura.
+- **Protección de rutas privadas**: Solo los usuarios autenticados pueden acceder a rutas privadas del sistema.
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+---
+📥 Instalación
+
+- Clona este repositorio:
+
+```bash
+git clone <https://github.com/stypcanto/sistema-autentificacion-v1>
+
 ```
+- Navega a la carpeta del proyecto y instala las dependencias:
+    - En el backend:
+    ```bash
+        cd backend
+        npm init -y
+        npm install express pg bcryptjs jsonwebtoken cors dotenv
+        npm install nodemon --save-dev
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+         En el frontend:
+     ```bash
+        cd frontend
+        npm install
+ 
+    ```
+    - Ejecuta el servidor del backend:
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+     ```bash
+        npm init -y
+        npm install express pg bcryptjs jsonwebtoken cors dotenv
+        npm install nodemon --save-dev
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+        npm install --save crypto
+        npm install --save pg-native
+
+        npm install pg@latest
+        npm install dotenv
+
+
+
+  ```
+
+ 4. Ejecuta el frontend con:
+  
+   ```bash
+        
+     npm start
+
+ ```
