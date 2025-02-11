@@ -1,4 +1,11 @@
-# Sistema de Autenticación con React, Node.js y PostgreSQL
+# Proyecto Final - Portal de Gestión de Administración para profesionales de CENATE ESSALUD
+
+Este proyecto es de propiedad de Ing. Styp Canto, CIP. 131278.
+
+Contacto: styp611@outlook.com
+
+---
+Sistema creado con login de autenticación con React, Node.js y PostgreSQL
 
 Este proyecto es un sistema de autenticación completo con **React** en el frontend y **Node.js** con **Express** en el backend. Proporciona las funcionalidades esenciales para la gestión de usuarios y autenticación segura, usando las mejores prácticas de seguridad.
 
