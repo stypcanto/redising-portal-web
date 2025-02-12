@@ -1,86 +1,118 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { loginUser } from '../Server/Api'; // Asumimos que tienes esta función de API que hace la solicitud al backend
+import { useNavigate } from "react-router-dom";
+import { registerUser } from '../Server/Api';
 
-const Login = () => {
-  // Estados para almacenar email, password, mensajes de error y estado de carga
+const Registro = () => {
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false); // Estado para manejar la carga
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(""); // Agregar estado para éxito
   const navigate = useNavigate();
 
-  // Función para manejar el envío del formulario
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const inputStyle =
+    "w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500";
 
-    // Validación previa antes de enviar el formulario
-    if (!email || !password) {
-      setError("Por favor ingresa tanto el correo electrónico como la contraseña.");
-      return;
+    const handleRegister = async (e: React.FormEvent) => {
+      e.preventDefault();
+
+    // Validación de campos
+  if (!username || !email || !password || !confirmPassword) {
+    setError("Por favor ingresa todos los campos.");
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    setError("Las contraseñas no coinciden.");
+    return;
+  }
+
+  // Validación de formato de email
+  const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+  if (!emailRegex.test(email)) {
+    setError("Por favor ingresa un email válido.");
+    return;
+  }
+
+  // Verifica que el campo username no esté vacío
+  if (!username.trim()) {
+    setError("Por favor ingresa un nombre de usuario válido.");
+    return;
+  }
+
+  setLoading(true);
+  setError(""); // Limpiar cualquier error previo
+
+  try {
+    const data = await registerUser(username, email, password);
+    setLoading(false);
+
+    if (data.success) {
+      setSuccess("Usuario registrado con éxito. Redirigiendo al login...");
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    } else {
+      setError(data.message || "Error al registrar usuario.");
     }
-
-    setLoading(true); // Se muestra "Cargando..." mientras se realiza la solicitud
-
-    try {
-      // Llamamos a la función loginUser pasándole email y password
-      const data = await loginUser(email, password);
-
-      setLoading(false); // Detener la carga
-
-      // Verificamos si se recibió el token
-      if (data.token) {
-        // Guardamos el token en el localStorage
-        localStorage.setItem('token', data.token);
-
-        // Opcionalmente, también puedes guardar información del usuario si el backend la devuelve
-        if (data.user) {
-          localStorage.setItem('user', JSON.stringify(data.user));
-        }
-
-        // Navegamos a la página de inicio
-        navigate('/home');
-      } else {
-        // Si no hay token, mostramos el mensaje de error retornado por el servidor
-        setError(data.message || 'Error al iniciar sesión');
-      }
-    } catch (err) {
-      setLoading(false);
-      setError('Error al iniciar sesión');
-      console.error('Login error:', err);
-    }
-  };
-
-  // Redirigir a la página de registro
-  const redirectToRegister = () => {
-    navigate("/registro"); // Redirige a la página de registro
-  };
+  } catch (err) {
+    setLoading(false);
+    setError("Hubo un error al registrar el usuario.");
+    console.error("Register error:", err);
+  }
+};
 
   return (
     <div className="min-h-screen bg-cover bg-center bg-[url('/images/fondo-portal-web-cenate-2025.png')] flex items-center justify-center">
-      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-semibold text-center text-blue-900 mb-6">Login CENATE</h1>
-        
+      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
+        <h1 className="mb-6 text-3xl font-semibold text-center text-blue-900">Registro CENATE</h1>
+
+        {/* Mostrar mensaje de éxito si existe */}
+        {success && <p className="mb-4 text-center text-green-500">{success}</p>}
+
         {/* Mostrar error si existe */}
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-        
-        <form onSubmit={handleLogin}>
+        {error && <p className="mb-4 text-center text-red-500">{error}</p>}
+
+        <form onSubmit={handleRegister}>
           <div className="mb-4">
-            <input 
-              type="email" 
-              placeholder="Email" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <input
+              type="text"
+              placeholder="Nombre de usuario"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className={inputStyle}
             />
           </div>
+
+          <div className="mb-4">
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={inputStyle}
+            />
+          </div>
+
+          <div className="mb-4">
+            <input
+              type="password"
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={inputStyle}
+            />
+          </div>
+
           <div className="mb-6">
-            <input 
-              type="password" 
-              placeholder="Contraseña" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <input
+              type="password"
+              placeholder="Confirmar Contraseña"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className={inputStyle}
             />
           </div>
 
@@ -97,44 +129,26 @@ const Login = () => {
               type="submit"
               className="w-full py-3 px-6 bg-[#2e63a6] text-white text-sm font-semibold rounded-lg shadow-md hover:bg-[#2e63a6] hover:scale-105 focus:outline-none focus:ring-2"
             >
-              Iniciar sesión
+              Registrarse
             </button>
           )}
         </form>
 
-        {/* Enlace a "Olvidaste tu contraseña" */}
-        <div className="flex justify-center items-center mt-4">
-          <Link
-            to="/forgot-password"
-            className="text-sm text-[#2e63a6] hover:text-blue-500 underline"
-          >
-            ¿Olvidaste tu contraseña?
-          </Link>
-        </div>
-
-        {/* Enlace a página de registro */}
+        {/* Enlace para redirigir al login si ya tienes cuenta */}
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-700">
-            ¿No tienes una cuenta?{" "}
-            <strong 
+            ¿Ya tienes una cuenta?{" "}
+            <strong
               className="text-[#2e63a6] cursor-pointer"
-              onClick={redirectToRegister}
+              onClick={() => navigate("/login")}
             >
-              Únete gratis
+              Inicia sesión
             </strong>
           </p>
         </div>
-
-        <button 
-          type="button" 
-          onClick={redirectToRegister} 
-          className="w-full p-3 mt-4 bg-green-700 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          Crear una cuenta
-        </button>
       </div>
     </div>
   );
 };
 
-export default Login;
+export default Registro;

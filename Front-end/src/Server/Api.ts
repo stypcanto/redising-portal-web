@@ -12,27 +12,34 @@ interface ApiResponse {
     email: string;
   };
   message?: string;
+  success?: boolean;  // Añado un campo de éxito para la respuesta de registro
 }
 
 // Función para registrar un usuario
-export const registerUser = async (username: string, email: string, password: string): Promise<ApiResponse> => {
+export const registerUser = async (username: string, email: string, password: string) => {
   try {
-    const response = await axios.post<ApiResponse>(`${API_URL}/registro`, {  // Cambié la ruta a "/registro"
-      username,
-      email,
-      password,
+    const response = await fetch('http://localhost:5001/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, email, password }),
     });
-    return response.data;
+
+    const data = await response.json();
+    return data;
   } catch (error) {
-    return handleAxiosError(error, 'No se pudo registrar el usuario.');
+    console.error('Error al registrar usuario:', error);
+    throw error;
   }
 };
+
 
 // Función para iniciar sesión
 export const loginUser = async (email: string, password: string): Promise<ApiResponse> => {
   try {
     const response = await axios.post<ApiResponse>(`${API_URL}/login`, {
-      email, // Asegúrate de que el backend espera "email" y no "username"
+      email,
       password,
     });
     return response.data;
@@ -44,7 +51,7 @@ export const loginUser = async (email: string, password: string): Promise<ApiRes
 // Función para obtener el perfil (requiere token en los headers)
 export const getProfile = async (token: string): Promise<ApiResponse> => {
   try {
-    const response = await axios.get<ApiResponse>(`${API_URL}/portaladmin`, {  // Cambié la ruta a "/portaladmin"
+    const response = await axios.get<ApiResponse>(`${API_URL}/portaladmin`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;

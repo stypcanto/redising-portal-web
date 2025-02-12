@@ -51,28 +51,45 @@ function verifyToken(req, res, next) {
   }
 }
 
-// Ruta para registrar un nuevo usuario
+// Ruta para registrar usuarios
 app.post('/register', async (req, res) => {
-  const { email, password } = req.body;
+  const { username, email, password } = req.body;
 
-  // Verificar si el email ya existe en la base de datos
+  console.log(req.body); // Agregar para depurar el contenido de la solicitud
+
+  // Validar si los datos están presentes
+  if (!username || !email || !password) {
+    return res.status(400).json({ message: 'Por favor ingresa todos los campos.' });
+  }
+
   try {
-    const checkUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-    if (checkUser.rows.length > 0) {
-      return res.status(400).json({ message: 'El email ya existe.' });
+    // Comprobar si el usuario ya existe
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+
+    if (result.rows.length > 0) {
+      return res.status(400).json({ message: 'El correo electrónico ya está registrado.' });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // Hashear la contraseña
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Guardar en la base de datos
-    await pool.query('INSERT INTO users (email, password) VALUES ($1, $2)', [email, hashedPassword]);
-    return res.status(201).json({ message: 'Usuario registrado con éxito.' });
+    // Insertar el nuevo usuario en la base de datos
+    const insertResult = await pool.query(
+      'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email',
+      [username, email, hashedPassword]
+    );
+
+    const newUser = insertResult.rows[0];
+
+    // Responder con los datos del usuario registrado
+    res.status(201).json({ success: true, message: 'Usuario registrado exitosamente.', user: newUser });
   } catch (err) {
     console.error('Error al registrar el usuario:', err);
-    return res.status(500).json({ message: 'Error al registrar el usuario.' });
+    res.status(500).json({ message: 'Hubo un error al registrar el usuario.' });
   }
 });
+
+
 
 // Ruta para iniciar sesión
 app.post('/login', async (req, res) => {
