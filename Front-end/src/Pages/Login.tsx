@@ -41,15 +41,16 @@ const Login = () => {
   };
 
   const redirectToRegister = () => {
+    alert("Redirigiendo a registro...");  // Verifica si se ejecuta
     navigate("/registro");  // Redirige a la página de registro
   };
   
 
   return (
     <div className="min-h-screen bg-cover bg-center bg-[url('/images/fondo-portal-web-cenate-2025.png')] flex items-center justify-center">
-      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-semibold text-center text-blue-900 mb-6">Login CENATE</h1>
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
+        <h1 className="mb-6 text-3xl font-semibold text-center text-blue-900">Login CENATE</h1>
+        {error && <p className="mb-4 text-center text-red-500">{error}</p>}
         
         <form onSubmit={handleLogin}>
           <div className="mb-4">
@@ -79,7 +80,7 @@ const Login = () => {
           </button>
         </form>
 
-        <div className="flex justify-center items-center mt-4">
+        <div className="flex items-center justify-center mt-4">
           <Link
             to="/forgot-password"
             className="text-sm text-[#2e63a6] hover:text-blue-500 underline"
@@ -103,7 +104,7 @@ const Login = () => {
         <button 
           type="button" 
           onClick={redirectToRegister} 
-          className="w-full p-3 mt-4 bg-green-700 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full p-3 mt-4 text-white bg-green-700 rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           Crear una cuenta
         </button>
