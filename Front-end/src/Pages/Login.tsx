@@ -1,26 +1,49 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom"; // Importa Link para la navegación interna
-
+import { Link, useNavigate } from "react-router-dom";
+import { loginUser } from '../Server/Api';  // Asumimos que tienes esta función de API que hace la solicitud al backend
 
 const Login = () => {
+  // Estados para almacenar email, password y mensajes de error
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Función para manejar el envío del formulario
+  const handleLogin = async (e: React.FormEvent) => { // Hacemos esta función async
     e.preventDefault();
-    if (email === "admin@cenate.com" && password === "admin") {
-      navigate("/portaladmin");  // Redirige a la página de administrador
-    } else {
-      setError("Usuario o contraseña incorrectos.");
+
+    try {
+      // Llamamos a la función loginUser pasándole email y password
+      const data = await loginUser(email, password);
+
+      // Verificamos si se recibió el token
+      if (data.token) {
+        // Guardamos el token en el localStorage
+        localStorage.setItem('token', data.token);
+
+        // Opcionalmente, también puedes guardar información del usuario si el backend la devuelve
+        if (data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
+
+        // Navegamos a la página de inicio (o la que desees)
+        navigate('/portaladmin');
+      } else {
+        // Si no hay token, mostramos el mensaje de error retornado por el servidor
+        setError(data.message || 'Error al iniciar sesión');
+      }
+    } catch (err) {
+      // Si ocurre un error en la solicitud
+      setError('Error al iniciar sesión');
+      console.error('Login error:', err);
     }
   };
 
   const redirectToRegister = () => {
     navigate("/registro");  // Redirige a la página de registro
   };
-
+  
 
   return (
     <div className="min-h-screen bg-cover bg-center bg-[url('/images/fondo-portal-web-cenate-2025.png')] flex items-center justify-center">
@@ -58,7 +81,7 @@ const Login = () => {
 
         <div className="flex justify-center items-center mt-4">
           <Link
-            to="/forgot-password"  // Usa Link para navegación interna
+            to="/forgot-password"
             className="text-sm text-[#2e63a6] hover:text-blue-500 underline"
           >
             ¿Olvidaste tu contraseña?
@@ -84,6 +107,7 @@ const Login = () => {
         >
           Crear una cuenta
         </button>
+      
       </div>
     </div>
   );

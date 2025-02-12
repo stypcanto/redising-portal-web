@@ -43,10 +43,31 @@ git clone <https://github.com/stypcanto/sistema-autentificacion-v1>
         npm install express pg bcryptjs jsonwebtoken cors dotenv
         npm install nodemon --save-dev
 
+```
+Paso 1: En la raíz de tu proyecto de backend, crea un archivo .env con el siguiente contenido:
+
+ ```bash
+JWT_SECRET=mi_clave_secreta
+```
+Paso 2: Cargar la variable de entorno
+
+Asegúrate de que en tu archivo server.js (o el archivo donde gestionas el JWT), estés cargando correctamente las variables de entorno. Instala la librería dotenv si no la tienes:
+
+ ```bash
+npm install dotenv
+
+```
+Y en la parte superior de tu archivo server.js, agrega:
+ ```bash
+require('dotenv').config();
+
+```
+      
          En el frontend:
-     ```bash
+        ```bash
         cd frontend
         npm install
+        npm install axios
  
     ```
     - Ejecuta el servidor del backend:

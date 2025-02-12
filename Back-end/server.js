@@ -6,6 +6,9 @@ const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
 require('dotenv').config();
 
+// Verifica que JWT_SECRET esté correctamente cargada
+console.log('JWT_SECRET:', process.env.JWT_SECRET);
+
 // Inicializamos el servidor de Express y definimos el puerto
 const app = express();
 const port = 5001;  // Puerto en el que se ejecutará el servidor
@@ -50,20 +53,20 @@ function verifyToken(req, res, next) {
 
 // Ruta para registrar un nuevo usuario
 app.post('/register', async (req, res) => {
-  const { username, email, password } = req.body;
+  const { email, password } = req.body;
 
-  // Verificar si el usuario o el email ya existen en la base de datos
+  // Verificar si el email ya existe en la base de datos
   try {
-    const checkUser = await pool.query('SELECT * FROM users WHERE username = $1 OR email = $2', [username, email]);
+    const checkUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (checkUser.rows.length > 0) {
-      return res.status(400).json({ message: 'El usuario o el email ya existen.' });
+      return res.status(400).json({ message: 'El email ya existe.' });
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Guardar en la base de datos
-    await pool.query('INSERT INTO users (username, email, password) VALUES ($1, $2, $3)', [username, email, hashedPassword]);
+    await pool.query('INSERT INTO users (email, password) VALUES ($1, $2)', [email, hashedPassword]);
     return res.status(201).json({ message: 'Usuario registrado con éxito.' });
   } catch (err) {
     console.error('Error al registrar el usuario:', err);
@@ -73,12 +76,17 @@ app.post('/register', async (req, res) => {
 
 // Ruta para iniciar sesión
 app.post('/login', async (req, res) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
+
+  // Verificar si los campos email y password están presentes
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email y contraseña son requeridos.' });
+  }
 
   try {
-    // Buscar el usuario por nombre de usuario o correo electrónico
-    const query = 'SELECT * FROM users WHERE username = $1 OR email = $2';
-    const params = [username, username];  // 'username' puede ser nombre o correo electrónico
+    // Buscar el usuario por email
+    const query = 'SELECT * FROM users WHERE email = $1';
+    const params = [email];
     const user = await pool.query(query, params);
 
     if (user.rows.length === 0) {
@@ -93,23 +101,23 @@ app.post('/login', async (req, res) => {
 
     // Generar el token JWT
     const token = jwt.sign(
-      { id: user.rows[0].id, username: user.rows[0].username },
+      { id: user.rows[0].id, email: user.rows[0].email },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
 
     // Enviar el token
-    return res.json({ token });
+    return res.json({ token, user: { email: user.rows[0].email } });
   } catch (err) {
     console.error('Error en el login:', err);
-    return res.status(500).json({ message: 'Error en el servidor al procesar el login.' });
+    return res.status(500).json({ message: 'Error en el servidor al procesar el login.', error: err.message });
   }
 });
 
 // Ruta privada que requiere autenticación mediante JWT
-app.get('/profile', verifyToken, async (req, res) => {
+app.get('/portaladmin', verifyToken, async (req, res) => {
   try {
-    const user = await pool.query('SELECT username FROM users WHERE id = $1', [req.user.id]);
+    const user = await pool.query('SELECT email FROM users WHERE id = $1', [req.user.id]);
     return res.json({ user: user.rows[0] });
   } catch (err) {
     console.error('Error al obtener el perfil:', err);
