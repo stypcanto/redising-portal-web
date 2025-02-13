@@ -59,17 +59,31 @@ const NavMenu = () => {
           </SubMenu>
 
           <SubMenu label="SDGT">
-            <SubMenu label="Coordinadores">
-              <MenuItem>
-                <Link to="/coordinadores-area">Coordinadores de Área</Link>
-              </MenuItem>
-              <MenuItem>
-                <Link to="/gestoras-citas">Gestoras de Citas</Link>
-              </MenuItem>
-            </SubMenu>
+            
             <MenuItem>
               <Link to="/gestores-territoriales">Gestores Territoriales</Link>
             </MenuItem>
+
+
+            <SubMenu label="Coordinadores de área">
+            <MenuItem>
+                <Link to="/cooridnado-general">Coordinador general</Link>
+              </MenuItem>
+              <MenuItem>
+                <Link to="/coordinadores-gcitas">Coordinares de Gestión de Citas</Link>
+              </MenuItem>
+              <MenuItem>
+                <Link to="/cooridnadores-tc-to">Coordinadores de TC/TO/TINT</Link>
+              </MenuItem>
+              <MenuItem>
+                <Link to="/cooridnadores-tm-tu">Coordinadores de TM/TU</Link>
+              </MenuItem>
+              <MenuItem>
+                <Link to="/cooridnadores-tad">Coordinadores de TAD</Link>
+              </MenuItem>
+            </SubMenu>
+
+
           </SubMenu>
 
           <SubMenu label="SDRIST">
@@ -79,7 +93,30 @@ const NavMenu = () => {
             <MenuItem>
               <Link to="/proyectos-disruptivos">Proyectos Disruptivos</Link>
             </MenuItem>
+            <MenuItem>
+              <Link to="/gestion-datos">Gestión de Datos</Link>
+            </MenuItem>
           </SubMenu>
+
+
+          <SubMenu label="Dirección de Despacho">
+            <MenuItem>
+              <Link to="/rrhh">Recursos Humanos</Link>
+            </MenuItem>
+            <MenuItem>
+              <Link to="/abastecimiento">Abastecimiento</Link>
+            </MenuItem>
+            <MenuItem>
+              <Link to="/planeamiento">Abastecimiento</Link>
+            </MenuItem>
+            <MenuItem>
+              <Link to="/presupuesto">Presupuesto</Link>
+            </MenuItem>
+            <MenuItem>
+              <Link to="/contable">Contable</Link>
+            </MenuItem>
+          </SubMenu>
+
         </Menu>
 
         {/* 🔹 Cuenta */}

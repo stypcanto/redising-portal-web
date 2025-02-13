@@ -5,6 +5,7 @@ import Header_template from "../components/Header/Header_template";
 import Nav_intro from "../components/Nav/Nav_intro";
 import NavTransversal from "../components/Nav/Nav_transversal";
 import List_SDGT from "../components/Card/List_SDGT";
+
 import { CardsDataAdminType } from "../types/CardsDataAdminType"; // Import the type
 
 const PortalAdmin = () => {
