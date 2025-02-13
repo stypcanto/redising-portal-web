@@ -13,7 +13,7 @@ const Nav_intro: React.FC = () => {
       {/* Información General con fondo gris */}
       <li className="px-4 py-3 bg-gray-300 hover:bg-gray-200 transition-all duration-300 group">
         <a
-          href="#"
+          href="/navmenu"
           className="flex items-center font-normal text-black group-hover:text-gray-700 transition-all"
         >
           {/* Ícono Home */}
