@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { Menu, MenuButton, MenuDivider, MenuItem, SubMenu } from "@szhsin/react-menu";
 import "@szhsin/react-menu/dist/index.css";
 import { Link } from "react-router-dom";
 
-{/* Más info de como usar: https://szhsin.github.io/react-menu#header-divider*/}
+interface NavMenuProps {
+  children?: ReactNode; // Permite aceptar elementos hijos
+}
 
-
-const NavMenu = () => {
+const NavMenu: React.FC<NavMenuProps> = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false); // Estado para menú hamburguesa
 
   return (
@@ -28,7 +29,7 @@ const NavMenu = () => {
         {/* 🔹 Información Asistencial */}
         <Menu
           menuButton={
-            <MenuButton className="px-4 py-2  text-white rounded-sm w-full sm:w-auto text-left">
+            <MenuButton className="px-4 py-2 text-white rounded-sm w-full sm:w-auto text-left">
               Información Asistencial
             </MenuButton>
           }
@@ -42,14 +43,14 @@ const NavMenu = () => {
         </Menu>
 
         {/* 🔹 Información Administrativa */}
-        <Menu 
+        <Menu
           menuButton={
-            <MenuButton className="px-4 py-2  text-white rounded-sm w-full sm:w-auto text-left">
+            <MenuButton className="px-4 py-2 text-white rounded-sm w-full sm:w-auto text-left">
               Información Administrativa
             </MenuButton>
           }
         >
-          <SubMenu  label="Dirección General">
+          <SubMenu label="Dirección General">
             <MenuItem>
               <Link to="/gestion-procesos">Gestión de Procesos</Link>
             </MenuItem>
@@ -59,31 +60,26 @@ const NavMenu = () => {
           </SubMenu>
 
           <SubMenu label="SDGT">
-            
             <MenuItem>
               <Link to="/gestores-territoriales">Gestores Territoriales</Link>
             </MenuItem>
-
-
             <SubMenu label="Coordinadores de área">
-            <MenuItem>
-                <Link to="/cooridnado-general">Coordinador general</Link>
+              <MenuItem>
+                <Link to="/coordinador-general">Coordinador general</Link>
               </MenuItem>
               <MenuItem>
-                <Link to="/coordinadores-gcitas">Coordinares de Gestión de Citas</Link>
+                <Link to="/coordinadores-gcitas">Coordinadores de Gestión de Citas</Link>
               </MenuItem>
               <MenuItem>
-                <Link to="/cooridnadores-tc-to">Coordinadores de TC/TO/TINT</Link>
+                <Link to="/coordinadores-tc-to">Coordinadores de TC/TO/TINT</Link>
               </MenuItem>
               <MenuItem>
-                <Link to="/cooridnadores-tm-tu">Coordinadores de TM/TU</Link>
+                <Link to="/coordinadores-tm-tu">Coordinadores de TM/TU</Link>
               </MenuItem>
               <MenuItem>
-                <Link to="/cooridnadores-tad">Coordinadores de TAD</Link>
+                <Link to="/coordinadores-tad">Coordinadores de TAD</Link>
               </MenuItem>
             </SubMenu>
-
-
           </SubMenu>
 
           <SubMenu label="SDRIST">
@@ -98,7 +94,6 @@ const NavMenu = () => {
             </MenuItem>
           </SubMenu>
 
-
           <SubMenu label="Dirección de Despacho">
             <MenuItem>
               <Link to="/rrhh">Recursos Humanos</Link>
@@ -107,36 +102,37 @@ const NavMenu = () => {
               <Link to="/abastecimiento">Abastecimiento</Link>
             </MenuItem>
             <MenuItem>
-              <Link to="/planeamiento">Abastecimiento</Link>
+              <Link to="/planeamiento">Planeamiento</Link>
             </MenuItem>
             <MenuItem>
               <Link to="/presupuesto">Presupuesto</Link>
             </MenuItem>
             <MenuItem>
-              <Link to="/contable">Contable</Link>
+              <Link to="/contable">Contabilidad</Link>
             </MenuItem>
           </SubMenu>
-
         </Menu>
 
         {/* 🔹 Cuenta */}
         <Menu
           menuButton={
-            <MenuButton className="px-4 py-2  text-white rounded-sm w-full sm:w-auto text-left">
+            <MenuButton className="px-4 py-2 text-white rounded-sm w-full sm:w-auto text-left">
               Cuenta
             </MenuButton>
           }
         >
-          <MenuItem>
-            <Link to="/editar-perfil">Editar Perfil</Link>
+          <MenuItem disabled>
+            <Link to="#">Editar Perfil</Link>
           </MenuItem>
           <MenuDivider />
-             {/* 🏥 Para deshabiltar opciones */}
-          <MenuItem disabled>
-            <Link to="/cerrar-sesion">Cerrar Sesión</Link>
+          <MenuItem >
+            <Link to="/">Cerrar Sesión</Link>
           </MenuItem>
         </Menu>
       </div>
+
+      {/* 📌 Elementos adicionales (children) */}
+      <div className="flex items-center space-x-4">{children}</div>
 
       {/* 🏥 Logo a la derecha */}
       <img src="/images/LOGOESSALUD.png" alt="Logo" className="w-40 h-auto" />
