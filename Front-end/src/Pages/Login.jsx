@@ -10,8 +10,9 @@ const Login = () => {
   const navigate = useNavigate();
 
   // Función para manejar el envío del formulario
-  const handleLogin = async (e: React.FormEvent) => { // Hacemos esta función async
+  const handleLogin = async (e) => {
     e.preventDefault();
+
 
     try {
       // Llamamos a la función loginUser pasándole email y password

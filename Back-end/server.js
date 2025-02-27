@@ -15,10 +15,11 @@ const port = 5001;  // Puerto en el que se ejecutará el servidor
 
 // Configuración de CORS para permitir solicitudes desde localhost:5175 y localhost:5173
 app.use(cors({
-  origin: ['http://localhost:5175', 'http://localhost:5174', 'http://localhost:5173'], // Permitir ambos puertos en caso de que el frontend use otro
+  origin: ['http://localhost:5175', 'http://localhost:5174', 'http://localhost:5173', 'http://localhost:5176'], // Agrega localhost:5176
   methods: 'GET,POST,PUT,DELETE',
   allowedHeaders: 'Content-Type,Authorization',
 }));
+
 
 // Responde a las solicitudes OPTIONS (preflight)
 app.options('*', cors());  // Responde a las solicitudes OPTIONS

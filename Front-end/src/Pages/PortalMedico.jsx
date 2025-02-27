@@ -8,7 +8,7 @@ import { cardData } from "../components/Data/data";
 import logoLeft from "/images/LOGO CENATE3.png";
 import logoRight from "/images/LOGO CENATE2.png";
 
-const PortalMedico: React.FC = () => {
+const PortalMedico = () => { 
     const [cards] = useState(cardData);
     const [isNavExpanded, setIsNavExpanded] = useState(false); // Control de estado de expansión de la barra
   
@@ -18,17 +18,17 @@ const PortalMedico: React.FC = () => {
         <Nav setIsNavExpanded={setIsNavExpanded} />
   
         {/* Contenedor de Header y main */}
-        <div className="flex-1 w-full mx-auto py-0 transition-all duration-300">
+        <div className="flex-1 w-full py-0 mx-auto transition-all duration-300">
           <div className={`transition-all duration-300 ${isNavExpanded ? "ml-64" : "ml-16"}`}>
             <Header title="Portal Médico" logoLeft={logoLeft} logoRight={logoRight} />
           </div>
   
           <main className={`w-auto mt-6 transition-all duration-300 px-10 ${isNavExpanded ? "ml-64" : "ml-16"}`}>
             {/* Título principal */}
-            <h1 className="text-3xl font-bold text-center mb-6 text-white">PANEL PRINCIPAL TC TM TO</h1>
+            <h1 className="mb-6 text-3xl font-bold text-center text-white">PANEL PRINCIPAL TC TM TO</h1>
   
             {/* Grid para los cards */}
-            <div className="mt-11 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 transition-all duration-300">
+            <div className="grid grid-cols-1 gap-8 transition-all duration-300 mt-11 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {cards.map((card) => (
                 <Card
                   key={card.id}

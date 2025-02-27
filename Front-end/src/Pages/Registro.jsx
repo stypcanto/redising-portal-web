@@ -15,9 +15,11 @@ const Registro = () => {
   const inputStyle =
     "w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500";
 
-    const handleRegister = async (e: React.FormEvent) => {
-      e.preventDefault();
+  
 
+      const handleRegister = async (e) => {
+        e.preventDefault();
+    
     // Validación de campos
   if (!username || !email || !password || !confirmPassword) {
     setError("Por favor ingresa todos los campos.");

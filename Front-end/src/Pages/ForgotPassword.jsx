@@ -7,8 +7,9 @@ const ForgotPassword = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+
 
     // Validación simple para verificar el email
     if (!email) {
@@ -28,10 +29,10 @@ const ForgotPassword = () => {
 
   return (
     <div className="min-h-screen   bg-cover bg-center  bg-[url('/images/fondo-portal-web-cenate-2025.png')] flex items-center justify-center">
-      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-semibold text-center text-blue-900 mb-6">Recuperar Contraseña</h1>
-        {message && <p className="text-green-500 text-center mb-4">{message}</p>}
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
+        <h1 className="mb-6 text-3xl font-semibold text-center text-blue-900">Recuperar Contraseña</h1>
+        {message && <p className="mb-4 text-center text-green-500">{message}</p>}
+        {error && <p className="mb-4 text-center text-red-500">{error}</p>}
         
         <form onSubmit={handleSubmit}>
           <div className="mb-4">

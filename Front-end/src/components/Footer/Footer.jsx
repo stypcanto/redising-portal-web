@@ -1,16 +1,16 @@
 import React from "react";
 
-const Footer: React.FC = () => {
+const Footer = () => {
   return (
-    <footer className=" text-[#2b75b2] py-6 mt-8">
+    <footer className="text-[#2b75b2] py-6 mt-8">
       <div className="container mx-auto text-center">
         {/* 
-  <div className="flex justify-center space-x-6 mb-4">
-    <a href="/" className="hover:text-blue-400  transition-colors duration-300">Inicio</a>
-    <a href="/about" className="hover:text-blue-400 transition-colors duration-300">Acerca de</a>
-    <a href="/contact" className="hover:text-blue-400 transition-colors duration-300">Contacto</a>
-  </div>
-*/}
+        <div className="flex justify-center mb-4 space-x-6">
+          <a href="/" className="transition-colors duration-300 hover:text-blue-400">Inicio</a>
+          <a href="/about" className="transition-colors duration-300 hover:text-blue-400">Acerca de</a>
+          <a href="/contact" className="transition-colors duration-300 hover:text-blue-400">Contacto</a>
+        </div>
+        */}
         <div className="text-sm">
           <p>&copy; {new Date().getFullYear()} CENATE. Todos los derechos reservados.</p>
         </div>
