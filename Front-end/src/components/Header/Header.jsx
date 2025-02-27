@@ -3,7 +3,7 @@ import "../../Styles/styles.css";
 
 const Header = ({ title, subtitle, logoLeft, logoRight }) => {
   return (
-    <header className="flex items-center justify-between p-8 bg-white">
+    <header className="flex items-center justify-between p-4 bg-white">
       {/* Logo izquierdo con transición */}
       {logoLeft && (
         <img

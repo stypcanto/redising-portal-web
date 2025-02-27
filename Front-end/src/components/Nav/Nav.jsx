@@ -1,22 +1,19 @@
 import React, { useState } from "react";
 import menuIcon from "/images/Iconos_Imagenes - teleconsulta.svg";
 
-const Nav = ({ setIsNavExpanded }) => {
-  const [expanded, setExpanded] = useState(false);
+const Nav = ({ isNavExpanded, setIsNavExpanded }) => {
   const [infoGeneralExpanded, setInfoGeneralExpanded] = useState(false);
   const [medLibraryExpanded, setMedLibraryExpanded] = useState(false);
   const [lawsNormsExpanded, setLawsNormsExpanded] = useState(false);
 
   return (
     <div
-      className={`transition-all duration-300 fixed top-0 left-0 h-full ${expanded ? "w-72" : "w-16"} bg-[#0c63ab] text-[#ecf0f1] shadow-lg z-50`}
+      className={`transition-all duration-300 fixed top-20  left-0 h-full ${isNavExpanded ? "w-72" : "w-16"} bg-[#0a5ba9] text-[#ecf0f1] shadow-lg z-50`}
       onMouseEnter={() => {
-        setExpanded(true);
-        setIsNavExpanded(true);
+        setIsNavExpanded(true); // Expande el menú cuando se pasa el ratón por encima
       }}
       onMouseLeave={() => {
-        setExpanded(false);
-        setIsNavExpanded(false);
+        setIsNavExpanded(false); // Contrae el menú cuando el ratón sale
       }}
     >
       {/* Logo o ícono */}
@@ -25,7 +22,7 @@ const Nav = ({ setIsNavExpanded }) => {
       </div>
 
       {/* Menú */}
-      {expanded && (
+      {isNavExpanded && (
         <div className="mt-12 text-white">
           <ul className="space-y-4">
             {/* Información General */}
