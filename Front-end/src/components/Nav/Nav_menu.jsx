@@ -4,6 +4,7 @@ import { Menu, MenuButton, MenuDivider, MenuItem, SubMenu } from "@szhsin/react-
 import "@szhsin/react-menu/dist/index.css";
 import { FaChevronDown, FaBars, FaTimes } from "react-icons/fa";
 
+
 function NavMenu({ onSelectSection }) {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate(); // ✅ Definir la función de navegación
@@ -16,7 +17,10 @@ function NavMenu({ onSelectSection }) {
       { isOpen && <div className="fixed inset-0 z-40 bg-black opacity-50 md:hidden" onClick={ closeMenu }></div> }
 
       <nav className="bg-[#0a5ba9] text-white py-6 px-14 fixed top-0 w-full z-50 shadow-lg flex items-center justify-between">
-        <img src="/images/LOGOCENATE1.png" alt="Logo" className="w-40 h-auto md:hidden lg:block" />
+        <a href="/portaladmin">
+          <img src="/images/LOGOCENATE1.png" alt="Logo" className="w-40 h-auto md:hidden lg:block" />
+        </a>
+
 
         <button className="z-50 text-2xl text-white lg:hidden" onClick={ toggleMenu }>
           { isOpen ? <FaTimes /> : <FaBars /> }
@@ -38,15 +42,38 @@ function NavMenu({ onSelectSection }) {
           </MenuButton> }>
             <SubMenu label="Dirección General">
               <SubMenu label="Responsable de la calidad">
-                <MenuItem onClick={ () => { onSelectSection("GestionProceso"); closeMenu(); } }>Gestión de Procesos y Mejora Continua</MenuItem>
+                <MenuItem onClick={ () => { onSelectSection("GestionProceso"); closeMenu(); } }>
+                  <a
+                    href="https://segurosocialdesalud-my.sharepoint.com/:f:/g/personal/cenate_calidad_essalud_gob_pe/Etc8PQQ_TTVNjHh2TrpnQaIB0BlsWpemTUhRmWYDt6P79w"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full h-full"
+                  >
+                    Gestión de Procesos y Mejora Continua
+                  </a>
+                </MenuItem>
+
               </SubMenu>
               <SubMenu label="Responsable de Imagen y Comunicación">
-                <MenuItem onClick={ () => { onSelectSection("ResponsableReputacion"); closeMenu(); } }>Gestión de la Reputación</MenuItem>
+                <MenuItem onClick={ () => { onSelectSection("ResponsableReputacion"); closeMenu(); } }>
+                  <a
+                    href="https://segurosocialdesalud-my.sharepoint.com/:f:/g/personal/cenate_calidad_essalud_gob_pe/EqB0QoX5zwhBrnldoH12_cYBc6OKKNT0LIK6yxVfmwf62Q"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full h-full"
+                  >
+                    Gestión de la Reputación
+                  </a>
+
+                </MenuItem>
               </SubMenu>
             </SubMenu>
 
             <SubMenu label="SDGT">
-              <MenuItem onClick={ () => { onSelectSection("GestoresTerritoriales"); closeMenu(); } }>Gestores Territoriales</MenuItem>
+              <MenuItem onClick={ () => { onSelectSection("GestionTerritorial"); closeMenu(); } }>
+                Gestores Territoriales
+              </MenuItem>
+
               <SubMenu label="Coordinadores de área">
                 <MenuItem onClick={ () => { onSelectSection("CoordinadorGeneral"); closeMenu(); } }>Coordinador General</MenuItem>
                 <MenuItem onClick={ () => { onSelectSection("CoordinadoresGCitas"); closeMenu(); } }>Coordinadores de Gestión de Citas</MenuItem>
@@ -55,7 +82,7 @@ function NavMenu({ onSelectSection }) {
                 <MenuItem onClick={ () => { onSelectSection("CoordinadoresTAD"); closeMenu(); } }>Coordinadores de TAD</MenuItem>
                 <MenuItem onClick={ () => { onSelectSection("CoordinadorTI"); closeMenu(); } }>Coordinadores TI</MenuItem>
                 <MenuItem onClick={ () => { onSelectSection("CoordinadorTelecapaTeleIEC"); closeMenu(); } }>Coordinador Telecapacitación y TeleIEC</MenuItem>
-                
+
               </SubMenu>
             </SubMenu>
 

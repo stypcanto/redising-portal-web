@@ -15,7 +15,7 @@ const Card = ({ title, imageSrc, subtitle, onClick }) => {
       <img
         src={imageSrc}
         alt={title}
-        className="object-cover mx-auto mt-2 rounded-t-lg w-15 h-15"
+        className="object-cover mx-auto mt-2 rounded-t-lg w-18 h-18"
       />
       <div className="p-4">
         <h2 className="text-xs font-semibold text-center text-gray-800 hover:text-white font-inter">{title}</h2>

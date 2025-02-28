@@ -31,7 +31,7 @@ const Nav = ({ isNavExpanded, setIsNavExpanded }) => {
               onMouseEnter={() => setInfoGeneralExpanded(true)}
               onMouseLeave={() => setInfoGeneralExpanded(false)}
             >
-              <a href="#" className="flex items-center font-semibold text-lg text-white group-hover:text-[#ecf0f1] transition-all">
+              <a href="#" className="flex items-center font-semibold text-sm text-white group-hover:text-[#ecf0f1] transition-all">
                 Información General
               </a>
               {infoGeneralExpanded && (
@@ -49,7 +49,7 @@ const Nav = ({ isNavExpanded, setIsNavExpanded }) => {
               onMouseEnter={() => setMedLibraryExpanded(true)}
               onMouseLeave={() => setMedLibraryExpanded(false)}
             >
-              <a href="#" className="flex items-center font-semibold text-lg text-white group-hover:text-[#ecf0f1] transition-all">
+              <a href="#" className="flex items-center font-semibold text-sm text-white group-hover:text-[#ecf0f1] transition-all">
                 Biblioteca Médica
               </a>
               {medLibraryExpanded && (
@@ -70,7 +70,7 @@ const Nav = ({ isNavExpanded, setIsNavExpanded }) => {
               onMouseEnter={() => setLawsNormsExpanded(true)}
               onMouseLeave={() => setLawsNormsExpanded(false)}
             >
-              <a href="#" className="flex items-center font-semibold text-lg text-white group-hover:text-[#ecf0f1] transition-all">
+              <a href="#" className="flex items-center font-semibold text-sm text-white group-hover:text-[#ecf0f1] transition-all">
                 Leyes y Normas
               </a>
               {lawsNormsExpanded && (

@@ -1,29 +1,31 @@
 import { useState } from "react";
 import Footer_azul from "../components/Footer/Footer_azul";
 import NavTransversal from "../components/Nav/Nav_transversal";
-import List_SDGT from "../components/Card/List_SDGT";
 import NavMenu from "../components/Nav/Nav_menu";
-import PortalMedico from "./PortalMedico"; // ✅ Importamos la página que queremos mostrar
+import PortalMedico from "./PortalMedico";
+import GestionTerritorial from "./Gestionterritorial";
 
 const PortalAdmin = () => {
-  const [selectedSection, setSelectedSection] = useState(null); // ✅ Guardará el componente a renderizar
+  const [selectedSection, setSelectedSection] = useState(null);
 
   return (
     <div className="flex flex-col min-h-screen overflow-hidden">
       {/* ✅ Barra de navegación superior */}
-      <NavMenu onSelectSection={(section) => {
-        // ✅ Seleccionamos el componente basado en la opción elegida
-        if (section === "PortalMedico") {
-          setSelectedSection(<PortalMedico />);
-        } else {
-          setSelectedSection(null); // Vuelve a la página de bienvenida
-        }
-      }} />
+      <NavMenu 
+        onSelectSection={(section) => {
+          if (section === "PortalMedico") {
+            setSelectedSection(<PortalMedico />);
+          } else if (section === "GestionTerritorial") {
+            setSelectedSection(<GestionTerritorial />);
+          } else {
+            setSelectedSection(null); // Volver a la pantalla de bienvenida si la opción no es válida
+          }
+        }} 
+      />
 
       <div className="flex flex-col flex-1 h-full lg:flex-row">
         {/* ✅ Contenido principal dinámico con prioridad */}
-        <div className="relative flex items-center justify-center flex-1 ">
-
+        <div className="relative flex items-center justify-center flex-1">
           {!selectedSection ? (
             <>
               {/* Imagen de fondo completamente extendida */}

@@ -11,6 +11,7 @@ import PortalAdmin from "./Pages/PortalAdmin";
 import Registro from "./Pages/Registro";
 import ForgotPassword from "./Pages/ForgotPassword";
 import NavMenu from "./components/Nav/Nav_menu"; // ✅ Ruta corregida
+import GestionTerritorial from "./Pages/Gestionterritorial";
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
@@ -28,6 +29,7 @@ ReactDOM.createRoot(rootElement).render(
           <Route path="portalmedico" element={<PortalMedico />} />
           <Route path="login" element={<Login />} />
           <Route path="registro" element={<Registro />} />
+          <Route path="gestionterritorial" element={<GestionTerritorial />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="navmenu" element={<NavMenu />} />
         </Route>

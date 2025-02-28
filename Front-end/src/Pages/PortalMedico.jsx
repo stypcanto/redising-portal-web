@@ -12,16 +12,16 @@ const PortalMedico = () => {
   const [isNavExpanded, setIsNavExpanded] = useState(false); // Control de estado de la barra lateral
 
   return (
-    <div className="flex flex-row bg-gradient-to-b from-[#2b75b2] to-[#ffffff]">
+    <div className="flex flex-row w-full bg-gradient-to-b from-[#2b75b2] to-[#ffffff]">
       {/* Barra de navegación lateral */}
       <Nav isNavExpanded={isNavExpanded} setIsNavExpanded={setIsNavExpanded} />
 
       {/* Contenedor principal */}
       <div
-        className={`flex flex-col flex-1 transition-all duration-300 px-9 py-9 ${isNavExpanded ? 'ml-60' : 'ml-30'}`}
+        className={`flex flex-col flex-1 transition-all duration-300 px-9 py-9 ${isNavExpanded ? 'ml-70' : 'ml-20'}`}
       >
         {/* Título */}
-        <h1 className="mt-16 mb-6 text-3xl font-bold text-center text-white">
+        <h1 className="mt-16 text-3xl font-bold text-center text-white mb-14">
           PANEL PRINCIPAL TC TM TO
         </h1>
 
