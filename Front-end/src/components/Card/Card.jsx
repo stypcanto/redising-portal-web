@@ -15,14 +15,14 @@ const Card = ({ title, imageSrc, subtitle, onClick }) => {
       <img
         src={imageSrc}
         alt={title}
-        className="object-cover mx-auto mt-4 rounded-t-lg w-15 h-15"
+        className="object-cover mx-auto mt-2 rounded-t-lg w-15 h-15"
       />
       <div className="p-4">
-        <h2 className="font-semibold text-center text-gray-800 hover:text-white text-l font-inter">{title}</h2>
-        {subtitle && (
-          <h3 className="hover:text-white text-md text-center font-inter font-stretch-100% text-gray-800 mt-2">{subtitle}</h3>
-        )}
-      </div>
+        <h2 className="text-xs font-semibold text-center text-gray-800 hover:text-white font-inter">{title}</h2>
+        {/*subtitle && (
+          <h3 className="hover:text-white text-sm text-center font-inter font-stretch-100% text-gray-800 mt-1">{subtitle}</h3>
+        )*/}
+      </div>   
     </div>
   );
 };

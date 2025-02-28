@@ -9,7 +9,7 @@ const PortalAdmin = () => {
   const [selectedSection, setSelectedSection] = useState(null); // ✅ Guardará el componente a renderizar
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen overflow-hidden">
       {/* ✅ Barra de navegación superior */}
       <NavMenu onSelectSection={(section) => {
         // ✅ Seleccionamos el componente basado en la opción elegida
@@ -22,7 +22,7 @@ const PortalAdmin = () => {
 
       <div className="flex flex-col flex-1 h-full lg:flex-row">
         {/* ✅ Contenido principal dinámico con prioridad */}
-        <div className="relative flex items-center justify-center flex-1 overflow-hidden">
+        <div className="relative flex items-center justify-center flex-1 ">
 
           {!selectedSection ? (
             <>

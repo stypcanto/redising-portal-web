@@ -68,6 +68,8 @@ require('dotenv').config();
         cd frontend
         npm install
         npm install axios
+        npm install react-icons
+
  
     ```
     - Ejecuta el servidor del backend:

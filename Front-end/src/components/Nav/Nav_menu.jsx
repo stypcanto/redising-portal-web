@@ -15,7 +15,7 @@ function NavMenu({ onSelectSection }) {
     <>
       { isOpen && <div className="fixed inset-0 z-40 bg-black opacity-50 md:hidden" onClick={ closeMenu }></div> }
 
-      <nav className="bg-[#0a5ba9] text-white py-5 px-6 fixed top-0 w-full z-50 shadow-lg flex items-center justify-between">
+      <nav className="bg-[#0a5ba9] text-white py-6 px-14 fixed top-0 w-full z-50 shadow-lg flex items-center justify-between">
         <img src="/images/LOGOCENATE1.png" alt="Logo" className="w-40 h-auto md:hidden lg:block" />
 
         <button className="z-50 text-2xl text-white lg:hidden" onClick={ toggleMenu }>
@@ -23,22 +23,26 @@ function NavMenu({ onSelectSection }) {
         </button>
 
         <div
-          className={ `fixed md:static top-0 right-0 h-full w-64 md:w-auto bg-[#0a5ba9] md:flex md:items-center md:space-x-6 p-6 md:p-0 shadow-lg md:shadow-none transform transition-transform ${isOpen ? "translate-x-0" : "translate-x-full"
+          className={ `fixed md:static top-0 text-sm right-0 h-full w-64 md:w-auto bg-[#0a5ba9] md:flex md:items-center md:space-x-6 p-6 md:p-0 shadow-lg md:shadow-none transform transition-transform ${isOpen ? "translate-x-0" : "translate-x-full"
             } md:translate-x-0 z-50` }
         >
-          <Menu menuButton={ <MenuButton className="flex items-center px-5 py-2 text-white rounded-sm hover:bg-[#083e77]">
+          <Menu menuButton={ <MenuButton className="flex text-sm  items-center px-4 py-2 text-white rounded-sm hover:bg-[#083e77]">
             Información Asistencial <FaChevronDown className="ml-2" />
           </MenuButton> }>
             <MenuItem onClick={ () => { onSelectSection("PortalMedico"); closeMenu(); } }>Portal Médico</MenuItem>
             <MenuItem onClick={ () => { onSelectSection("ListadoPersonal"); closeMenu(); } }>Listado Personal</MenuItem>
           </Menu>
 
-          <Menu menuButton={ <MenuButton className="flex items-center px-4 py-2 text-white rounded-sm hover:bg-[#083e77]">
+          <Menu menuButton={ <MenuButton className="flex text-sm  items-center px-4 py-2 text-white rounded-sm hover:bg-[#083e77]">
             Información Administrativa <FaChevronDown className="ml-2" />
           </MenuButton> }>
             <SubMenu label="Dirección General">
-              <MenuItem onClick={ () => { onSelectSection("GestionProcesos"); closeMenu(); } }>Gestión de Procesos</MenuItem>
-              <MenuItem onClick={ () => { onSelectSection("GestionReputacion"); closeMenu(); } }>Gestión de la Reputación</MenuItem>
+              <SubMenu label="Responsable de la calidad">
+                <MenuItem onClick={ () => { onSelectSection("GestionProceso"); closeMenu(); } }>Gestión de Procesos y Mejora Continua</MenuItem>
+              </SubMenu>
+              <SubMenu label="Responsable de Imagen y Comunicación">
+                <MenuItem onClick={ () => { onSelectSection("ResponsableReputacion"); closeMenu(); } }>Gestión de la Reputación</MenuItem>
+              </SubMenu>
             </SubMenu>
 
             <SubMenu label="SDGT">
@@ -49,6 +53,9 @@ function NavMenu({ onSelectSection }) {
                 <MenuItem onClick={ () => { onSelectSection("CoordinadoresTCTO"); closeMenu(); } }>Coordinadores de TC/TO/TINT</MenuItem>
                 <MenuItem onClick={ () => { onSelectSection("CoordinadoresTMTU"); closeMenu(); } }>Coordinadores de TM/TU</MenuItem>
                 <MenuItem onClick={ () => { onSelectSection("CoordinadoresTAD"); closeMenu(); } }>Coordinadores de TAD</MenuItem>
+                <MenuItem onClick={ () => { onSelectSection("CoordinadorTI"); closeMenu(); } }>Coordinadores TI</MenuItem>
+                <MenuItem onClick={ () => { onSelectSection("CoordinadorTelecapaTeleIEC"); closeMenu(); } }>Coordinador Telecapacitación y TeleIEC</MenuItem>
+                
               </SubMenu>
             </SubMenu>
 
@@ -67,7 +74,7 @@ function NavMenu({ onSelectSection }) {
             </SubMenu>
           </Menu>
 
-          <Menu menuButton={ <MenuButton className="flex items-center px-4 py-2 text-white rounded-sm hover:bg-[#083e77]">
+          <Menu menuButton={ <MenuButton className="flex text-sm  items-center px-4 py-2 text-white rounded-sm hover:bg-[#083e77]">
             Cuenta <FaChevronDown className="ml-2" />
           </MenuButton> }>
             <MenuItem disabled onClick={ closeMenu }>Editar Perfil</MenuItem>
