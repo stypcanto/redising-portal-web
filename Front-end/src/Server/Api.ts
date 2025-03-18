@@ -1,72 +1,73 @@
-import axios from 'axios';
+import axios, { AxiosError } from "axios";
 
-// URL base de la API
-const API_URL = 'http://localhost:5001';
+// 📌 URL base de la API (usar variable de entorno)
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
-// Tipado para la respuesta esperada del servidor
-interface ApiResponse {
-  token?: string;
-  user?: {
-    id: number;
-    username: string;
-    email: string;
-  };
-  message?: string;
-  success?: boolean;  // Añado un campo de éxito para la respuesta de registro
+if (!API_URL) {
+  throw new Error("❌ Error: La variable VITE_API_URL no está definida.");
 }
 
-// Función para registrar un usuario
-export const registerUser = async (username: string, email: string, password: string) => {
+// 📌 Interfaces
+interface User {
+  id?: number;
+  dni: string;
+}
+
+interface ApiResponse {
+  token?: string;
+  user?: User;
+  message?: string;
+  success: boolean;
+}
+
+// 📌 Configuración global de Axios
+const api = axios.create({
+  baseURL: API_URL,
+  headers: { "Content-Type": "application/json" },
+});
+
+// 📌 Función genérica para peticiones POST
+const postRequest = async <T>(url: string, data: Record<string, unknown>): Promise<T> => {
   try {
-    const response = await fetch('http://localhost:5001/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ username, email, password }),
-    });
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error al registrar usuario:', error);
-    throw error;
-  }
-};
-
-
-// Función para iniciar sesión
-export const loginUser = async (email: string, password: string): Promise<ApiResponse> => {
-  try {
-    const response = await axios.post<ApiResponse>(`${API_URL}/login`, {
-      email,
-      password,
-    });
+    const response = await api.post<T>(url, data);
     return response.data;
   } catch (error) {
-    return handleAxiosError(error, 'No se pudo iniciar sesión.');
+    throw handleAxiosError(error);
   }
 };
 
-// Función para obtener el perfil (requiere token en los headers)
-export const getProfile = async (token: string): Promise<ApiResponse> => {
+// 📌 Función genérica para peticiones GET con token
+const getRequest = async <T>(url: string, token: string): Promise<T> => {
+  if (!token) {
+    throw new Error("❌ Error: Token de autenticación no proporcionado.");
+  }
+
   try {
-    const response = await axios.get<ApiResponse>(`${API_URL}/portaladmin`, {
+    const response = await api.get<T>(url, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
   } catch (error) {
-    return handleAxiosError(error, 'No se pudo obtener el perfil.');
+    throw handleAxiosError(error);
   }
 };
 
-// Función para manejar errores de Axios
-const handleAxiosError = (error: unknown, defaultMessage: string): ApiResponse => {
-  if (axios.isAxiosError(error)) {
-    console.error('Error de Axios:', error.response?.data || error.message);
-    return { message: error.response?.data?.message || defaultMessage };
-  } else {
-    console.error('Error inesperado:', error);
-    return { message: defaultMessage };
-  }
+// 📌 Autenticación
+export const registerUser = async (dni: string, password: string): Promise<ApiResponse> =>
+  postRequest<ApiResponse>("/register", { dni, password });
+
+export const loginUser = async (dni: string, password: string): Promise<ApiResponse> =>
+  postRequest<ApiResponse>("/login", { dni, password });
+
+export const getProfile = async (token: string): Promise<ApiResponse> =>
+  getRequest<ApiResponse>("/portaladmin", token);
+
+// 📌 Manejo de errores
+const handleAxiosError = (error: unknown): ApiResponse => {
+  const err = error as AxiosError<{ message: string }>;
+  const errorMessage = err.response?.data?.message || err.message || "Error desconocido";
+
+  console.error("❌ Error de API:", errorMessage);
+
+  return { success: false, message: errorMessage };
 };
