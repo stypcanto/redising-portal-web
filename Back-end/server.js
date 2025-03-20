@@ -11,23 +11,20 @@ console.log('JWT_SECRET:', process.env.JWT_SECRET);
 
 // Inicializamos el servidor de Express y definimos el puerto
 const app = express();
-const port = 5001;  // Puerto en el que se ejecutará el servidor
+const port = 5001;
 
-// Configuración de CORS para permitir solicitudes desde localhost:5175 y localhost:5173
+// Configuración de CORS para permitir solicitudes desde distintos puertos
 app.use(cors({
-  origin: ['http://localhost:5175', 'http://localhost:5174', 'http://localhost:5173', 'http://localhost:5176'], // Agrega localhost:5176
+  origin: "http://10.0.88.241:5173",
+  // origin: ['http://localhost:5175', 'http://localhost:5174', 'http://localhost:5173', 'http://localhost:5176'],
   methods: 'GET,POST,PUT,DELETE',
   allowedHeaders: 'Content-Type,Authorization',
 }));
 
-
-// Responde a las solicitudes OPTIONS (preflight)
-app.options('*', cors());  // Responde a las solicitudes OPTIONS
-
 // Middleware para parsear cuerpos de solicitudes en formato JSON
 app.use(express.json());
 
-// Configuración de la conexión a la base de datos PostgreSQL
+// Configuración de la conexión a PostgreSQL
 const pool = new Pool({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
@@ -36,17 +33,17 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
-// Función middleware para verificar si el token JWT es válido
+// Middleware para verificar el token JWT
 function verifyToken(req, res, next) {
-  const token = req.header('Authorization')?.split(' ')[1];  // 'Bearer token'
+  const token = req.header('Authorization')?.split(' ')[1];  
   if (!token) {
     return res.status(401).json({ message: 'Acceso no autorizado, token requerido.' });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;  // Agregar los datos del usuario al request
-    next();  // Continuar con la solicitud
+    req.user = decoded;
+    next();
   } catch (err) {
     return res.status(400).json({ message: 'Token no válido.' });
   }
@@ -54,58 +51,68 @@ function verifyToken(req, res, next) {
 
 // Ruta para registrar usuarios
 app.post('/register', async (req, res) => {
-  const { username, email, password } = req.body;
+  let userData = req.body;
 
-  console.log(req.body); // Agregar para depurar el contenido de la solicitud
+  // Verificamos si los datos vienen anidados en "dni"
+  if (userData.dni && typeof userData.dni === 'object') {
+    userData = userData.dni;
+  }
 
-  // Validar si los datos están presentes
-  if (!username || !email || !password) {
-    return res.status(400).json({ message: 'Por favor ingresa todos los campos.' });
+  const { dni, nombres, apellido_paterno, apellido_materno, colegiatura, correo, telefono, fecha_nacimiento, sexo, domicilio, especialidad, profesion, tipo_contrato, password } = userData;
+
+  console.log('Datos recibidos para registro:', userData);
+
+  if (!dni || !nombres || !apellido_paterno || !apellido_materno || !correo || !password) {
+    return res.status(400).json({ message: 'Por favor ingresa los campos obligatorios.' });
   }
 
   try {
     // Comprobar si el usuario ya existe
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const result = await pool.query('SELECT * FROM Personal_CENATE WHERE dni = $1', [dni]);
 
     if (result.rows.length > 0) {
-      return res.status(400).json({ message: 'El correo electrónico ya está registrado.' });
+      return res.status(400).json({ message: 'El DNI ya está registrado.' });
     }
 
     // Hashear la contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insertar el nuevo usuario en la base de datos
-    const insertResult = await pool.query(
-      'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email',
-      [username, email, hashedPassword]
-    );
+    // Insertar el nuevo usuario
+    const insertQuery = `
+      INSERT INTO Personal_CENATE (dni, nombres, apellido_paterno, apellido_materno, colegiatura, correo, telefono, fecha_nacimiento, sexo, domicilio, especialidad, profesion, tipo_contrato, password) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
+      RETURNING dni, nombres, apellido_paterno, apellido_materno, correo, profesion`;
+    
+    const insertValues = [dni, nombres, apellido_paterno, apellido_materno, colegiatura, correo, telefono, fecha_nacimiento, sexo, domicilio, especialidad, profesion, tipo_contrato, hashedPassword];
 
-    const newUser = insertResult.rows[0];
+    const newUser = await pool.query(insertQuery, insertValues);
 
-    // Responder con los datos del usuario registrado
-    res.status(201).json({ success: true, message: 'Usuario registrado exitosamente.', user: newUser });
+    res.status(201).json({ success: true, message: 'Usuario registrado exitosamente.', user: newUser.rows[0] });
   } catch (err) {
     console.error('Error al registrar el usuario:', err);
     res.status(500).json({ message: 'Hubo un error al registrar el usuario.' });
   }
 });
 
-
-
 // Ruta para iniciar sesión
 app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  let loginData = req.body;
 
-  // Verificar si los campos email y password están presentes
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email y contraseña son requeridos.' });
+  // Verificamos si los datos vienen anidados en "dni"
+  if (loginData.dni && typeof loginData.dni === 'object') {
+    loginData = loginData.dni;
+  }
+
+  const { dni, password } = loginData;
+
+  if (!dni || !password) {
+    return res.status(400).json({ message: 'DNI y contraseña son requeridos.' });
   }
 
   try {
-    // Buscar el usuario por email
-    const query = 'SELECT * FROM users WHERE email = $1';
-    const params = [email];
-    const user = await pool.query(query, params);
+    // Buscar el usuario por DNI
+    const query = 'SELECT dni, nombres, correo, password FROM Personal_CENATE WHERE dni = $1';
+    const user = await pool.query(query, [dni]);
 
     if (user.rows.length === 0) {
       return res.status(400).json({ message: 'Credenciales incorrectas.' });
@@ -119,23 +126,22 @@ app.post('/login', async (req, res) => {
 
     // Generar el token JWT
     const token = jwt.sign(
-      { id: user.rows[0].id, email: user.rows[0].email },
+      { dni: user.rows[0].dni, nombres: user.rows[0].nombres, correo: user.rows[0].correo },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
 
-    // Enviar el token
-    return res.json({ token, user: { email: user.rows[0].email } });
+    res.json({ token, user: { dni: user.rows[0].dni, nombres: user.rows[0].nombres, correo: user.rows[0].correo } });
   } catch (err) {
     console.error('Error en el login:', err);
-    return res.status(500).json({ message: 'Error en el servidor al procesar el login.', error: err.message });
+    res.status(500).json({ message: 'Error en el servidor al procesar el login.' });
   }
 });
 
-// Ruta privada que requiere autenticación mediante JWT
+// Ruta privada protegida por JWT
 app.get('/portaladmin', verifyToken, async (req, res) => {
   try {
-    const user = await pool.query('SELECT email FROM users WHERE id = $1', [req.user.id]);
+    const user = await pool.query('SELECT dni, nombres, correo FROM Personal_CENATE WHERE dni = $1', [req.user.dni]);
     return res.json({ user: user.rows[0] });
   } catch (err) {
     console.error('Error al obtener el perfil:', err);
@@ -143,12 +149,12 @@ app.get('/portaladmin', verifyToken, async (req, res) => {
   }
 });
 
-// Ruta básica para comprobar que el servidor está funcionando correctamente
+// Ruta básica de prueba
 app.get('/', (req, res) => {
   res.send('Servidor funcionando correctamente');
 });
 
-// Conectamos a la base de datos y, si la conexión es exitosa, iniciamos el servidor
+// Conexión a la base de datos y arranque del servidor
 pool.connect()
   .then(() => {
     app.listen(port, () => {
@@ -157,5 +163,5 @@ pool.connect()
   })
   .catch(err => {
     console.error('Error al conectar con la base de datos:', err);
-    process.exit(1);  // Detener el servidor si no se puede conectar a la base de datos
+    process.exit(1);
   });
