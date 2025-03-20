@@ -11,7 +11,6 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    // Validación básica
     if (!dni || !password) {
       setError("Por favor, ingresa DNI y contraseña.");
       return;
@@ -21,13 +20,10 @@ const Login = () => {
       const data = await loginUser(dni, password);
 
       if (data.token) {
-        sessionStorage.setItem("token", data.token); // Mejor que localStorage
+        localStorage.setItem("token", data.token); // ✅ Usar localStorage
+        localStorage.setItem("user", JSON.stringify(data.user)); 
 
-        if (data.user) {
-          sessionStorage.setItem("user", JSON.stringify(data.user));
-        }
-
-        navigate('/portaladmin');
+        navigate("/portaladmin");
       } else {
         setError(data.message || "Credenciales incorrectas.");
       }

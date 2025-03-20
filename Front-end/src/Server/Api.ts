@@ -1,10 +1,11 @@
 import axios, { AxiosError } from "axios";
 
-// 📌 URL base de la API (usar variable de entorno)
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+// 📌 Configuración de la URL base de la API desde variables de entorno
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5001";
+
 
 if (!API_URL) {
-  throw new Error("❌ Error: La variable VITE_API_URL no está definida.");
+  throw new Error("❌ Error: La variable de entorno VITE_API_URL no está definida.");
 }
 
 // 📌 Interfaces
@@ -13,11 +14,12 @@ interface User {
   dni: string;
 }
 
-interface ApiResponse {
+interface ApiResponse<T = unknown> {
+  success: boolean;
+  message?: string;
   token?: string;
   user?: User;
-  message?: string;
-  success: boolean;
+  data?: T;
 }
 
 // 📌 Configuración global de Axios
@@ -37,14 +39,10 @@ const postRequest = async <T>(url: string, data: Record<string, unknown>): Promi
 };
 
 // 📌 Función genérica para peticiones GET con token
-const getRequest = async <T>(url: string, token: string): Promise<T> => {
-  if (!token) {
-    throw new Error("❌ Error: Token de autenticación no proporcionado.");
-  }
-
+const getRequest = async <T>(url: string, token?: string): Promise<T> => {
   try {
     const response = await api.get<T>(url, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     return response.data;
   } catch (error) {
@@ -52,22 +50,56 @@ const getRequest = async <T>(url: string, token: string): Promise<T> => {
   }
 };
 
-// 📌 Autenticación
-export const registerUser = async (dni: string, password: string): Promise<ApiResponse> =>
-  postRequest<ApiResponse>("/register", { dni, password });
+// 📌 Función genérica para peticiones PUT (actualización)
+const putRequest = async <T>(url: string, data: Record<string, unknown>, token?: string): Promise<T> => {
+  try {
+    const response = await api.put<T>(url, data, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return response.data;
+  } catch (error) {
+    throw handleAxiosError(error);
+  }
+};
 
-export const loginUser = async (dni: string, password: string): Promise<ApiResponse> =>
-  postRequest<ApiResponse>("/login", { dni, password });
+// 📌 Función genérica para peticiones DELETE
+const deleteRequest = async <T>(url: string, token?: string): Promise<T> => {
+  try {
+    const response = await api.delete<T>(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return response.data;
+  } catch (error) {
+    throw handleAxiosError(error);
+  }
+};
 
-export const getProfile = async (token: string): Promise<ApiResponse> =>
-  getRequest<ApiResponse>("/portaladmin", token);
+// 📌 Autenticación y perfil
+export const registerUser = async (dni: string, password: string): Promise<ApiResponse> => 
+  await postRequest<ApiResponse>("/auth/register", { dni, password });
 
-// 📌 Manejo de errores
+export const loginUser = async (dni: string, password: string): Promise<ApiResponse> => 
+  await postRequest<ApiResponse>("/auth/login", { dni, password });
+
+export const getProfile = async (token: string): Promise<ApiResponse> => 
+  await getRequest<ApiResponse>("/user/portaladmin", token);
+
+// 📌 Manejo de errores mejorado
 const handleAxiosError = (error: unknown): ApiResponse => {
-  const err = error as AxiosError<{ message: string }>;
-  const errorMessage = err.response?.data?.message || err.message || "Error desconocido";
+  const err = error as AxiosError<{ message?: string }>;
+  const status = err.response?.status ?? 500;
+  
+  let errorMessage = "Error desconocido";
+  
+  if (err.response?.data?.message) {
+    errorMessage = err.response.data.message;
+  } else if (err.message) {
+    errorMessage = err.message;
+  } else if (err.request) {
+    errorMessage = "No se recibió respuesta del servidor.";
+  }
 
-  console.error("❌ Error de API:", errorMessage);
+  console.error(`❌ [API ERROR] ${status}: ${errorMessage}`);
 
   return { success: false, message: errorMessage };
 };

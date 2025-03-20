@@ -9,15 +9,15 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
-    "jsx": "react-jsx",  // ← Agregué la coma aquí ✅
+    "jsx": "react-jsx",
+    "moduleResolution": "node",
+    "types": ["node", "vite/client"],
 
     /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
     "noEmit": true,
-    "allowJs": true,  // ← Ya estaba bien
+    "allowJs": true,
 
     /* Linting */
     "strict": true,
