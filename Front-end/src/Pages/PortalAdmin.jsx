@@ -40,16 +40,13 @@ const PortalAdmin = () => {
         }
     
         const data = await response.json();
-        console.log("✅ Datos recibidos de la API:", data);
-    
-        // Asegurarse de que `data.user` y `data.user.nombres` estén disponibles
-        if (data && data.user && data.user.nombres) {
-          const nombre = data.user.nombres || "Usuario"; // Si `nombres` existe, úsalo, sino "Usuario"
-          console.log("📌 Nombre extraído:", nombre);
-          setUserName(nombre.trim());
-        } else {
-          console.warn("⚠️ No se encontró el campo 'nombres' en la respuesta de la API.");
-        }
+        console.log("✅ Respuesta completa de la API:", JSON.stringify(data, null, 2)); // 🔹 NUEVO LOG
+
+        // 🔹 Cambio: Verificación segura de `user.nombres`
+        const nombre = data?.user?.nombres || "Usuario";
+        console.log("📌 Nombre extraído:", nombre);
+        setUserName(nombre.trim());
+
       } catch (error) {
         console.error("⚠️ Error al obtener el usuario:", error.message);
       }
