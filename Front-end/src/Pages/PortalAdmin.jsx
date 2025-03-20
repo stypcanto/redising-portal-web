@@ -10,19 +10,18 @@ const PortalAdmin = () => {
   const [userName, setUserName] = useState("Usuario");
 
   useEffect(() => {
-    let isMounted = true; // Evita actualizaciones en componentes desmontados
     console.log("📌 Ejecutando fetchUserData()...");
 
     const fetchUserData = async () => {
       const token = localStorage.getItem("token");
-    
+
       if (!token) {
         console.error("❌ No hay token en localStorage. Debes iniciar sesión.");
         return;
       }
-    
+
       console.log("🔍 Token enviado:", token);
-    
+
       try {
         const response = await fetch("http://localhost:5001/portaladmin", {
           method: "GET",
@@ -31,33 +30,37 @@ const PortalAdmin = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-    
+
         console.log("🔄 Estado de la respuesta:", response.status);
-    
+
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`❌ Error ${response.status}: ${errorText}`);
+          if (response.status === 401 || response.status === 403) {
+            console.warn("🚨 Token inválido. Cerrando sesión...");
+            localStorage.removeItem("token"); // Eliminar token si es inválido
+            window.location.href = "/login"; // Redirigir al login
+            return;
+          }
+          throw new Error(`❌ Error ${response.status}: ${await response.text()}`);
         }
-    
+
         const data = await response.json();
-        console.log("✅ Respuesta completa de la API:", JSON.stringify(data, null, 2)); // 🔹 NUEVO LOG
+        console.log("✅ Respuesta completa de la API:", JSON.stringify(data, null, 2));
 
-        // 🔹 Cambio: Verificación segura de `user.nombres`
-        const nombre = data?.user?.nombres || "Usuario";
-        console.log("📌 Nombre extraído:", nombre);
-        setUserName(nombre.trim());
-
+        // Extrae correctamente el nombre
+        if (data.success && data.user) {
+          const nombre = data.user.nombres?.trim() || "Usuario";
+          console.log("📌 Nombre extraído:", nombre);
+          setUserName(nombre);
+        } else {
+          console.warn("⚠️ No se pudo obtener el nombre del usuario.");
+        }
       } catch (error) {
         console.error("⚠️ Error al obtener el usuario:", error.message);
       }
     };
-    
-    fetchUserData();
 
-    return () => {
-      isMounted = false; // Evita actualizaciones en componentes desmontados
-    };
-  }, []);
+    fetchUserData();
+  }, []); // 🔹 Se mantiene la dependencia vacía para que se ejecute una sola vez
 
   return (
     <div className="flex flex-col min-h-screen overflow-hidden">
