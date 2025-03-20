@@ -76,8 +76,21 @@ const deleteRequest = async <T>(url: string, token?: string): Promise<T> => {
 };
 
 // 📌 Autenticación y perfil
-export const registerUser = async (dni: string, password: string): Promise<ApiResponse> => 
-  await postRequest<ApiResponse>("/auth/register", { dni, password });
+interface RegisterUserData extends Record<string, unknown> {
+  dni: string;
+  nombres: string;
+  apellido_paterno: string;
+  apellido_materno: string;
+  correo: string;
+  password: string;
+}
+
+
+export const registerUser = async (userData: RegisterUserData): Promise<ApiResponse> => 
+await postRequest<ApiResponse>("/auth/register", userData);
+
+
+
 
 export const loginUser = async (dni: string, password: string): Promise<ApiResponse> => 
   await postRequest<ApiResponse>("/auth/login", { dni, password });

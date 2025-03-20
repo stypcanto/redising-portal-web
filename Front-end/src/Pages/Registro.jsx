@@ -55,7 +55,7 @@ const Registro = () => {
 
       if (data.success) {
         setMessage({ text: "Usuario registrado con éxito. Redirigiendo...", type: "success" });
-        setTimeout(() => navigate("/portaladmin"), 2000);
+        setTimeout(() => navigate("/login"), 2000);
       } else {
         setMessage({ text: data.message || "Error al registrar el usuario.", type: "error" });
       }
