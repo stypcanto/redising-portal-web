@@ -54,11 +54,17 @@ router.post("/login", async (req, res) => {
   try {
     const user = await pool.query("SELECT dni, nombres, apellido_paterno, apellido_materno, correo, password FROM Personal_CENATE WHERE dni = $1", [dni]);
 
+    console.log("🔹 Usuario encontrado:", user.rows[0]);  
     if (user.rows.length === 0) {
       return res.status(400).json({ success: false, message: "Credenciales incorrectas." });
     }
 
+    console.log("📌 Contraseña ingresada:", password);
+    console.log("🔐 Hash almacenado en BD:", user.rows[0].password);
+
     const isMatch = await bcrypt.compare(password, user.rows[0].password);
+    console.log("🔍 Comparación de contraseña:", isMatch);
+    
     if (!isMatch) {
       return res.status(400).json({ success: false, message: "Credenciales incorrectas." });
     }
@@ -74,6 +80,8 @@ router.post("/login", async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
+
+    console.log("🔹 Token generado:", token);
 
     res.json({ success: true, token, user: user.rows[0] });
   } catch (err) {

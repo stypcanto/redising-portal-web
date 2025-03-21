@@ -1,31 +1,48 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { loginUser } from '../Server/Api';
+import { loginUser } from "../Server/Api";
 
 const Login = () => {
-  const [dni, setDni] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [dni, setDni] = useState(""); // Estado para almacenar el DNI ingresado
+  const [password, setPassword] = useState(""); // Estado para la contraseña
+  const [error, setError] = useState(""); // Estado para manejar errores en el login
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  // Maneja la autenticación al hacer submit del formulario
+  const handleLogin = async (e) => { 
     e.preventDefault();
+   // Previene la recarga de la página
+
+   console.log("📌 DNI ingresado:", dni);
+   console.log("📌 Contraseña ingresada:", password);
 
     if (!dni || !password) {
-      setError("Por favor, ingresa DNI y contraseña.");
+      setError("Por favor, ingresa DNI y contraseña."); // Muestra error si faltan datos
       return;
     }
 
     try {
-      const data = await loginUser(dni, password);
+      const data = await loginUser(dni, password); // Llama a la API para autenticar
 
-      if (data.token) {
-        localStorage.setItem("token", data.token); // ✅ Usar localStorage
-        localStorage.setItem("user", JSON.stringify(data.user)); 
+      if (data?.success && data.token && data.user?.rol) {
+        // ✅ Guarda en localStorage solo los datos esenciales
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("rol", data.user.rol); // Guarda el rol en localStorage
 
-        navigate("/portaladmin");
+        // ✅ Redirige al usuario según su rol
+        switch (data.user.rol) {
+          case "Superadmin":
+            navigate("/superadmin");
+            break;
+          case "Administrador":
+            navigate("/portaladmin");
+            break;
+          default:
+            navigate("/usuario"); // Redirige a usuarios regulares
+            break;
+        }
       } else {
-        setError(data.message || "Credenciales incorrectas.");
+        setError(data?.message || "Credenciales incorrectas."); // Muestra error si la autenticación falla
       }
     } catch (err) {
       console.error("Error al iniciar sesión:", err);
@@ -37,6 +54,8 @@ const Login = () => {
     <div className="min-h-screen bg-cover bg-center bg-[url('/images/fondo-portal-web-cenate-2025.png')] flex items-center justify-center">
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
         <h1 className="mb-6 text-3xl font-semibold text-center text-blue-900">Login CENATE</h1>
+
+        {/* Muestra errores en caso de fallos */}
         {error && <p className="mb-4 text-center text-red-500">{error}</p>}
 
         <form onSubmit={handleLogin}>
@@ -59,6 +78,7 @@ const Login = () => {
             />
           </div>
 
+          {/* Botón para iniciar sesión */}
           <button
             type="submit"
             className="w-full py-3 px-6 bg-[#2e63a6] text-white text-sm font-semibold rounded-lg shadow-md hover:bg-[#2e63a6] hover:scale-105 focus:outline-none focus:ring-2"
@@ -67,12 +87,14 @@ const Login = () => {
           </button>
         </form>
 
+        {/* Enlace para recuperar contraseña */}
         <div className="flex items-center justify-center mt-4">
           <Link to="/forgot-password" className="text-sm text-[#2e63a6] hover:text-blue-500 underline">
             ¿Olvidaste tu contraseña?
           </Link>
         </div>
 
+        {/* Enlace para registrarse */}
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-700">
             ¿No tienes una cuenta?{" "}
@@ -85,6 +107,7 @@ const Login = () => {
           </p>
         </div>
 
+        {/* Botón para registrarse */}
         <button 
           type="button" 
           onClick={() => navigate("/registro")} 

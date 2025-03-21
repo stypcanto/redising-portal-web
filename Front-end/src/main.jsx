@@ -10,8 +10,10 @@ import Login from "./Pages/Login";
 import PortalAdmin from "./Pages/PortalAdmin";
 import Registro from "./Pages/Registro";
 import ForgotPassword from "./Pages/ForgotPassword";
-import NavMenu from "./components/Nav/Nav_menu"; // ✅ Ruta corregida
+import NavMenu from "./components/Nav/Nav_menu";
 import GestionTerritorial from "./Pages/Gestionterritorial";
+import SuperadminPage from "./Pages/SuperadminPage";  
+import PrivateRoute from "./components/Routes/PrivateRoute";  
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
@@ -20,18 +22,25 @@ if (!rootElement) {
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <BrowserRouter>
       <Routes>
-        {/* ✅ Layout principal */}
         <Route path="/" element={<App />}>
           <Route index element={<Home />} />
-          <Route path="portaladmin" element={<PortalAdmin />} />
-          <Route path="portalmedico" element={<PortalMedico />} />
           <Route path="login" element={<Login />} />
           <Route path="registro" element={<Registro />} />
           <Route path="gestionterritorial" element={<GestionTerritorial />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="navmenu" element={<NavMenu />} />
+
+          {/* ✅ Unifica acceso a PortalAdmin para "Administrador" y "Usuario" */}
+          <Route element={<PrivateRoute allowedRoles={["Administrador", "Usuario"]} />}>
+            <Route path="portaladmin" element={<PortalAdmin />} />
+          </Route>
+
+          {/* ✅ Ruta para Superadmin */}
+          <Route element={<PrivateRoute allowedRoles={["Superadmin"]} />}>
+            <Route path="superadmin" element={<SuperadminPage />} />
+          </Route>
         </Route>
 
         {/* ✅ Página 404 */}

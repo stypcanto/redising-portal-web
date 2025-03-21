@@ -1,13 +1,14 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const jwt = require("jsonwebtoken"); // 🔹 Agregado: Importar jsonwebtoken
+const jwt = require("jsonwebtoken");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
-const pool = require("./config/db"); // Asegúrate de que la ruta es correcta
+const adminRoutes = require("./routes/adminRoutes"); // 📌 Agregada nueva ruta para administración
+const pool = require("./config/db");
 
 const app = express();
-const port = process.env.PORT || 5001; // Permite usar variables de entorno
+const port = process.env.PORT || 5001;
 
 // 🛡️ Middleware
 app.use(cors());
@@ -22,6 +23,7 @@ app.use((req, res, next) => {
 // 📌 Rutas
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
+app.use("/admin", adminRoutes); // 📌 Agregado para manejar administración (Superadmin)
 
 // 🌍 Ruta de prueba
 app.get("/", (req, res) => res.send("Servidor corriendo 🚀"));
@@ -29,21 +31,21 @@ app.get("/", (req, res) => res.send("Servidor corriendo 🚀"));
 // 🔹 Ruta para obtener datos del usuario desde el token
 app.get("/portaladmin", async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1]; // Extrae el token del header
+    const token = req.headers.authorization?.split(" ")[1];
     if (!token) {
       return res.status(401).json({ success: false, message: "No autorizado" });
     }
 
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET); // Decodifica el token
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (error) {
       return res.status(403).json({ success: false, message: "Token inválido" });
     }
 
-    const { dni } = decoded; // Extrae el DNI del usuario
+    const { dni } = decoded;
 
-    // Busca al usuario en la base de datos
+    // 🔹 Busca al usuario en la base de datos
     const result = await pool.query("SELECT * FROM personal_cenate WHERE dni = $1", [dni]);
 
     if (result.rows.length === 0) {
@@ -55,10 +57,11 @@ app.get("/portaladmin", async (req, res) => {
     res.json({
       success: true,
       user: {
-        nombres: user.nombres.trim(), // 🔹 Se usa trim() para evitar espacios extras
+        nombres: user.nombres.trim(),
         apellido_paterno: user.apellido_paterno.trim(),
         apellido_materno: user.apellido_materno.trim(),
         correo: user.correo,
+        rol: user.rol, // 📌 Agregado para devolver el rol del usuario
       }
     });
   } catch (error) {
@@ -70,7 +73,7 @@ app.get("/portaladmin", async (req, res) => {
 // 🔹 Ruta para obtener toda la data de personal
 app.get("/personal", async (req, res) => {
   try {
-    const personal = await pool.query("SELECT * FROM personal_cenate"); // Ajusta según tu base de datos
+    const personal = await pool.query("SELECT * FROM personal_cenate");
     res.json({ success: true, data: personal.rows });
   } catch (error) {
     console.error("❌ Error en /personal:", error);

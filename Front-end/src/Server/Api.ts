@@ -1,18 +1,19 @@
 import axios, { AxiosError } from "axios";
 
-// 📌 Configuración de la URL base de la API desde variables de entorno
 const API_URL = (import.meta as ImportMeta & { env: Record<string, string> }).env.VITE_API_URL ?? "http://localhost:5001";
-
-
 
 if (!API_URL) {
   throw new Error("❌ Error: La variable de entorno VITE_API_URL no está definida.");
 }
 
-// 📌 Interfaces
 interface User {
   id?: number;
   dni: string;
+  nombres?: string;
+  apellido_paterno?: string;
+  apellido_materno?: string;
+  correo?: string;
+  rol: string;
 }
 
 interface ApiResponse<T = unknown> {
@@ -23,13 +24,12 @@ interface ApiResponse<T = unknown> {
   data?: T;
 }
 
-// 📌 Configuración global de Axios
 const api = axios.create({
   baseURL: API_URL,
   headers: { "Content-Type": "application/json" },
 });
 
-// 📌 Función genérica para peticiones POST
+// 📌 Función para solicitudes POST
 const postRequest = async <T>(url: string, data: Record<string, unknown>): Promise<T> => {
   try {
     const response = await api.post<T>(url, data);
@@ -39,7 +39,7 @@ const postRequest = async <T>(url: string, data: Record<string, unknown>): Promi
   }
 };
 
-// 📌 Función genérica para peticiones GET con token
+// 📌 Función para solicitudes GET
 const getRequest = async <T>(url: string, token?: string): Promise<T> => {
   try {
     const response = await api.get<T>(url, {
@@ -51,24 +51,10 @@ const getRequest = async <T>(url: string, token?: string): Promise<T> => {
   }
 };
 
-// 📌 Función genérica para peticiones PUT (actualización)
-const putRequest = async <T>(url: string, data: Record<string, unknown>, token?: string): Promise<T> => {
+// 📌 🚀 Nueva función PUT para actualizar roles u otros datos
+const putRequest = async <T>(url: string, data: Record<string, unknown>): Promise<T> => {
   try {
-    const response = await api.put<T>(url, data, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-    return response.data;
-  } catch (error) {
-    throw handleAxiosError(error);
-  }
-};
-
-// 📌 Función genérica para peticiones DELETE
-const deleteRequest = async <T>(url: string, token?: string): Promise<T> => {
-  try {
-    const response = await api.delete<T>(url, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+    const response = await api.put<T>(url, data);
     return response.data;
   } catch (error) {
     throw handleAxiosError(error);
@@ -85,17 +71,16 @@ interface RegisterUserData extends Record<string, unknown> {
   password: string;
 }
 
+const registerUser = async (userData: RegisterUserData): Promise<ApiResponse> => 
+  await postRequest<ApiResponse>("/auth/register", userData);
 
-export const registerUser = async (userData: RegisterUserData): Promise<ApiResponse> => 
-await postRequest<ApiResponse>("/auth/register", userData);
+  const loginUser = async (dni: string, password: string): Promise<ApiResponse> => {
+    console.log("🔹 Intentando login con:", dni, password);
+    return await postRequest<ApiResponse>("/auth/login", { dni, password });
+  };
+  
 
-
-
-
-export const loginUser = async (dni: string, password: string): Promise<ApiResponse> => 
-  await postRequest<ApiResponse>("/auth/login", { dni, password });
-
-export const getProfile = async (token: string): Promise<ApiResponse> => 
+const getProfile = async (token: string): Promise<ApiResponse> => 
   await getRequest<ApiResponse>("/user/portaladmin", token);
 
 // 📌 Manejo de errores mejorado
@@ -117,3 +102,6 @@ const handleAxiosError = (error: unknown): ApiResponse => {
 
   return { success: false, message: errorMessage };
 };
+
+// 📌 Exportaciones en una sola línea
+export { getRequest, postRequest, putRequest, registerUser, loginUser, getProfile };
