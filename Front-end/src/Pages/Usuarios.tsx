@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Eye, Edit, Trash2 } from "lucide-react";
 import { getRequest, deleteRequest } from "../Server/Api";
+import AddUsuarioModal from "../components/Modal/AddUsuarioModal";
 
 // Definir la interfaz para la respuesta de la API
 interface Usuario {
@@ -25,6 +26,7 @@ const Usuarios = () => {
   const [paginaActual, setPaginaActual] = useState<number>(1); // Estado para manejar la página actual
   const [showModal, setShowModal] = useState(false);
   const [usuarioAEliminar, setUsuarioAEliminar] = useState<Usuario | null>(null);
+  const [showAddUsuarioModal, setShowAddUsuarioModal] = useState(false); // Estado para controlar el modal de agregar usuario
 
   useEffect(() => {
     let isMounted = true;
@@ -101,6 +103,21 @@ const Usuarios = () => {
     setUsuarioAEliminar(null);
   };
 
+  const handleAddUsuario = (nombres: string, apellidoPaterno: string, apellidoMaterno: string, dni: string, rol: string) => {
+    const nuevoUsuario = {
+      id: usuarios.length + 1, // Generar un ID único para el nuevo usuario
+      nombres,
+      apellido_paterno: apellidoPaterno,
+      apellido_materno: apellidoMaterno,
+      dni,
+      rol
+    };
+  
+    setUsuarios([...usuarios, nuevoUsuario]); // Actualizar la lista de usuarios
+  };
+  
+  
+
   // Función de eliminación
   const handleDelete = async (userId: number) => {
     const token = localStorage.getItem("authToken");
@@ -133,14 +150,25 @@ const Usuarios = () => {
       <h1 className="mb-4 text-lg font-bold text-center text-[#1a2850]">Listado de Usuarios</h1>
 
       {/* Botón para Añadir Usuario - Movido a la parte superior izquierda */}
-      <div className="flex justify-start">
+      <div className="flex justify-start ">
         <button
           className="px-4 py-2 text-white bg-blue-500 rounded-md shadow-md hover:bg-blue-600"
-          onClick={() => alert("Funcionalidad para añadir usuario aquí")}
+          onClick={() => setShowAddUsuarioModal(true)} // Abrir modal de añadir usuario
         >
           Añadir usuario
         </button>
       </div>
+
+      {/* Modal para añadir un nuevo usuario */}
+     
+{showAddUsuarioModal && (
+  <AddUsuarioModal
+    showModal={showAddUsuarioModal}  // Cambia 'onClose' a 'showModal'
+    handleClose={() => setShowAddUsuarioModal(false)}  // Cambia 'onClose' a 'handleClose'
+    handleAddUser={handleAddUsuario}  // Cambia 'onAdd' a 'handleAddUser'
+  />
+)}
+
 
       {/* Selector de cantidad de entradas por página */}
       <div className="flex justify-end mb-4">
