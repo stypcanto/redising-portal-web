@@ -10,7 +10,8 @@ const Registro = () => {
     apellido_materno: "",
     correo: "",
     password: "",
-    confirmPassword: "", // Nuevo campo para reconfirmar la contraseña
+    confirmPassword: "",
+    rol: "Usuario", // Asignar rol por defecto
   });
 
   const [message, setMessage] = useState({ text: "", type: "" });
@@ -34,28 +35,35 @@ const Registro = () => {
       return;
     }
 
+    // Validar formato de correo electrónico
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.correo)) {
+      setMessage({ text: "Por favor ingresa un correo válido.", type: "error" });
+      return;
+    }
+
     // Validar que la contraseña tenga al menos 6 caracteres
     if (formData.password.length < 6) {
       setMessage({ text: "La contraseña debe tener al menos 6 caracteres.", type: "error" });
       return;
     }
 
-    // Validar que la contraseña y la reconfirmación coincidan
+    // Validar que las contraseñas coincidan
     if (formData.password !== formData.confirmPassword) {
       setMessage({ text: "Las contraseñas no coinciden.", type: "error" });
       return;
     }
 
     setLoading(true);
-
     try {
       const { confirmPassword, ...dataToSend } = formData; // No enviar confirmPassword al backend
+      console.log("📤 Enviando datos:", dataToSend); // Depuración
       const data = await registerUser(dataToSend);
       setLoading(false);
 
       if (data.success) {
         setMessage({ text: "Usuario registrado con éxito. Redirigiendo...", type: "success" });
-        setTimeout(() => navigate("/login"), 2000);
+        setTimeout(() => navigate("/login"), 1500);
       } else {
         setMessage({ text: data.message || "Error al registrar el usuario.", type: "error" });
       }
@@ -68,9 +76,7 @@ const Registro = () => {
   return (
     <div className="min-h-screen bg-cover bg-center flex items-center justify-center bg-[url('/images/fondo-portal-web-cenate-2025.png')]">
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
-        <h1 className="mb-6 text-3xl font-semibold text-center text-blue-900">
-          Registro CENATE
-        </h1>
+        <h1 className="mb-6 text-3xl font-semibold text-center text-blue-900">Registro CENATE</h1>
 
         {message.text && (
           <p className={`mb-4 text-center ${message.type === "error" ? "text-red-500" : "text-green-500"}`}>
@@ -85,16 +91,17 @@ const Registro = () => {
             { name: "apellido_paterno", label: "Apellido Paterno" },
             { name: "apellido_materno", label: "Apellido Materno" },
             { name: "correo", label: "Correo" },
-          ].map(({ name, label }) => (
+          ].map(({ name, label }, index) => (
             <div key={name} className="mb-4">
               <label className="block mb-1 font-semibold text-gray-700">{label}</label>
               <input
-                type="text"
+                type={name === "correo" ? "email" : "text"}
                 name={name}
                 placeholder={label}
                 value={formData[name]}
                 onChange={handleChange}
                 className={inputStyle}
+                autoFocus={index === 0} // Autofocus en el primer campo
               />
             </div>
           ))}
@@ -136,7 +143,7 @@ const Registro = () => {
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-700">
-            ¿Ya tienes una cuenta?{" "}
+            ¿Ya tienes una cuenta? {" "}
             <strong
               className="text-[#2e63a6] cursor-pointer"
               onClick={() => navigate("/login")}

@@ -1,6 +1,8 @@
 import axios, { AxiosError } from "axios";
 
-const API_URL = (import.meta as ImportMeta & { env: Record<string, string> }).env.VITE_API_URL ?? "http://localhost:5001";
+const API_URL =
+  (import.meta as ImportMeta & { env: Record<string, string> }).env.VITE_API_URL ??
+  "http://localhost:5001";
 
 if (!API_URL) {
   throw new Error("❌ Error: La variable de entorno VITE_API_URL no está definida.");
@@ -51,15 +53,19 @@ const getRequest = async <T>(url: string, token?: string): Promise<T> => {
   }
 };
 
-// 📌 🚀 Nueva función PUT para actualizar roles u otros datos
+// 📌 Función PUT para actualizar roles u otros datos
 const putRequest = async <T>(url: string, data: Record<string, unknown>): Promise<T> => {
   try {
-    const response = await api.put<T>(url, data);
+    const token = localStorage.getItem("authToken"); // 🔹 Obtén el token desde localStorage
+    const response = await api.put<T>(url, data, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
     return response.data;
   } catch (error) {
     throw handleAxiosError(error);
   }
 };
+
 
 // 📌 Autenticación y perfil
 interface RegisterUserData extends Record<string, unknown> {
@@ -71,25 +77,47 @@ interface RegisterUserData extends Record<string, unknown> {
   password: string;
 }
 
-const registerUser = async (userData: RegisterUserData): Promise<ApiResponse> => 
+// 📌 Registro de usuario
+const registerUser = async (userData: RegisterUserData): Promise<ApiResponse> =>
   await postRequest<ApiResponse>("/auth/register", userData);
 
-  const loginUser = async (dni: string, password: string): Promise<ApiResponse> => {
-    console.log("🔹 Intentando login con:", dni, password);
-    return await postRequest<ApiResponse>("/auth/login", { dni, password });
-  };
-  
+// 📌 Inicio de sesión con almacenamiento del token
+const loginUser = async (dni: string, password: string): Promise<ApiResponse> => {
+  console.log("🔹 Intentando login con:", dni, password);
 
-const getProfile = async (token: string): Promise<ApiResponse> => 
-  await getRequest<ApiResponse>("/user/portaladmin", token);
+  const response = await postRequest<ApiResponse>("/auth/login", { dni, password });
+
+  console.log("📡 Respuesta del backend:", response);
+
+  if (!response.success || !response.token) {
+    console.error("❌ Error de autenticación: Credenciales incorrectas.");
+  } else {
+    localStorage.setItem("authToken", response.token);
+    console.log("✅ Token guardado en localStorage.");
+  }
+
+  return response;
+};
+
+// 📌 Obtener perfil del usuario autenticado
+const getProfile = async (): Promise<ApiResponse> => {
+  const token = localStorage.getItem("authToken");
+
+  if (!token) {
+    console.error("❌ No hay token en localStorage");
+    return { success: false, message: "No hay token disponible" };
+  }
+
+  return await getRequest<ApiResponse>("/user/portaladmin", token);
+};
 
 // 📌 Manejo de errores mejorado
 const handleAxiosError = (error: unknown): ApiResponse => {
   const err = error as AxiosError<{ message?: string }>;
   const status = err.response?.status ?? 500;
-  
+
   let errorMessage = "Error desconocido";
-  
+
   if (err.response?.data?.message) {
     errorMessage = err.response.data.message;
   } else if (err.message) {

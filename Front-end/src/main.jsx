@@ -14,6 +14,7 @@ import NavMenu from "./components/Nav/Nav_menu";
 import GestionTerritorial from "./Pages/Gestionterritorial";
 import SuperadminPage from "./Pages/SuperadminPage";  
 import PrivateRoute from "./components/Routes/PrivateRoute";  
+import UnauthorizedPage from "./Pages/UnauthorizedPage"; 
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
@@ -42,7 +43,8 @@ ReactDOM.createRoot(rootElement).render(
             <Route path="superadmin" element={<SuperadminPage />} />
           </Route>
         </Route>
-
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
+ 
         {/* ✅ Página 404 */}
         <Route path="*" element={<Pagina404 />} />
       </Routes>

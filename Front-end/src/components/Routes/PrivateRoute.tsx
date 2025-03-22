@@ -1,16 +1,32 @@
 import { Navigate, Outlet } from "react-router-dom";
 
-const PrivateRoute = ({ allowedRoles }) => {
+const PrivateRoute = ({ allowedRoles }: { allowedRoles: string[] }) => {
   const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user") || "{}"); // ✅ Parsea el objeto usuario
 
-  if (!token) return <Navigate to="/login" replace />;
+  let user = null;
+  try {
+    user = JSON.parse(localStorage.getItem("user") || "null"); // ✅ Intenta parsear el usuario
+  } catch (error) {
+    console.error("❌ Error al leer el usuario de localStorage:", error);
+  }
 
-  // ✅ Permitir acceso total al Superadmin
-  if (user.rol === "Superadmin") return <Outlet />;
+  // 🚫 Si no hay token, redirigir a login
+  if (!token) {
+    console.warn("🔒 Usuario no autenticado. Redirigiendo a login...");
+    return <Navigate to="/login" replace />;
+  }
 
-  // ✅ Verificar si el usuario tiene un rol válido
-  if (!user.rol || !allowedRoles.includes(user.rol)) return <Navigate to="/" replace />;
+  // 🚫 Si no hay usuario o su estructura es inválida, redirigir a login
+  if (!user || !user.rol) {
+    console.warn("⚠️ Usuario inválido o sin rol. Redirigiendo a login...");
+    return <Navigate to="/login" replace />;
+  }
+
+  // ✅ Verificar si el rol del usuario está en la lista permitida
+  if (!allowedRoles.includes(user.rol)) {
+    console.warn(`⛔ Acceso denegado. El rol "${user.rol}" no tiene permisos.`);
+    return <Navigate to="/unauthorized" replace />;
+  }
 
   return <Outlet />;
 };
