@@ -1,25 +1,27 @@
 // tailwind.config.js
 module.exports = {
+  content: [
+    "./index.html", // Si tienes un index.html en la raíz
+    "./src/**/*.{js,jsx,ts,tsx}", // Escanea todos los archivos en src con JS, JSX, TS y TSX
+  ],
   theme: {
     extend: {
       animation: {
-        expandSubMenu: 'expandSubMenu 0.3s ease-in-out', // Animación para el submenú
+        expandSubMenu: "expandSubMenu 0.3s ease-in-out",
       },
       keyframes: {
         expandSubMenu: {
-          '0%': {
-            opacity: '0',
-            transform: 'translateY(-10px)', // Comienza desde arriba
+          "0%": {
+            opacity: "0",
+            transform: "translateY(-10px)",
           },
-          '100%': {
-            opacity: '1',
-            transform: 'translateY(0)', // Se posiciona normalmente
+          "100%": {
+            opacity: "1",
+            transform: "translateY(0)",
           },
         },
       },
     },
   },
   plugins: [],
-}
-
-
+};

@@ -101,7 +101,7 @@ const loginUser = async (dni: string, password: string): Promise<ApiResponse> =>
 
 // 📌 Obtener perfil del usuario autenticado
 const getProfile = async (): Promise<ApiResponse> => {
-  const token = localStorage.getItem("authToken");
+  const token = localStorage.getItem("authToken, response.token");
 
   if (!token) {
     console.error("❌ No hay token en localStorage");

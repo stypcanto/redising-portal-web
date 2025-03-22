@@ -77,3 +77,4 @@ WHERE dni = '44914706';
 
 
 SELECT dni, password FROM Personal_CENATE WHERE dni = '44914706';
+UPDATE personal_cenate SET rol = 'Superadmin' WHERE dni = '44914706';

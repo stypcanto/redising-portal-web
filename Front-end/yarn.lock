@@ -1269,6 +1269,11 @@
   dependencies:
     "yallist" "^3.0.2"
 
+"lucide-react@^0.483.0":
+  "integrity" "sha512-WldsY17Qb/T3VZdMnVQ9C3DDIP7h1ViDTHVdVGnLZcvHNg30zH/MTQ04RTORjexoGmpsXroiQXZ4QyR0kBy0FA=="
+  "resolved" "https://registry.npmjs.org/lucide-react/-/lucide-react-0.483.0.tgz"
+  "version" "0.483.0"
+
 "math-intrinsics@^1.1.0":
   "integrity" "sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g=="
   "resolved" "https://registry.npmjs.org/math-intrinsics/-/math-intrinsics-1.1.0.tgz"
@@ -1453,7 +1458,7 @@
   "resolved" "https://registry.npmjs.org/react-transition-state/-/react-transition-state-2.3.0.tgz"
   "version" "2.3.0"
 
-"react@*", "react@^18.3.1", "react@>=16.14.0", "react@>=16.8", "react@>=16.8.0":
+"react@*", "react@^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react@^18.3.1", "react@>=16.14.0", "react@>=16.8", "react@>=16.8.0":
   "integrity" "sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ=="
   "resolved" "https://registry.npmjs.org/react/-/react-18.3.1.tgz"
   "version" "18.3.1"

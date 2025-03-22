@@ -12,14 +12,10 @@ import Registro from "./Pages/Registro";
 import ForgotPassword from "./Pages/ForgotPassword";
 import NavMenu from "./components/Nav/Nav_menu";
 import GestionTerritorial from "./Pages/Gestionterritorial";
-import SuperadminPage from "./Pages/SuperadminPage";
-import PrivateRoute from "./components/Routes/PrivateRoute";
-import UnauthorizedPage from "./Pages/UnauthorizedPage";
-import UpdateRoles from "./Pages/UpdateRoles";
-import SuperadminDashboard from "./Pages/SuperadminDashboard";
-import Roles from "./Pages/Roles";
-import Usuarios from "./Pages/Usuarios";
-
+import SuperadminPage from "./Pages/SuperadminPage";  
+import PrivateRoute from "./components/Routes/PrivateRoute";  
+import UnauthorizedPage from "./Pages/UnauthorizedPage"; 
+import Roles from "./Pages/Roles";  
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
@@ -37,33 +33,23 @@ ReactDOM.createRoot(rootElement).render(
           <Route path="gestionterritorial" element={<GestionTerritorial />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="navmenu" element={<NavMenu />} />
-          <Route path="portalmedico" element={<PortalMedico />} />
 
-          {/* ✅ Ruta protegida para Administradores y Usuarios */}
+          {/* ✅ Unifica acceso a PortalAdmin para "Administrador" y "Usuario" */}
           <Route element={<PrivateRoute allowedRoles={["Administrador", "Usuario"]} />}>
             <Route path="portaladmin" element={<PortalAdmin />} />
           </Route>
 
-          {/* ✅ Rutas protegidas para Superadmin */}
+          {/* ✅ Ruta para Superadmin */}
           <Route element={<PrivateRoute allowedRoles={["Superadmin"]} />}>
-  <Route path="superadmin" element={<SuperadminPage />}>
-    <Route index element={<SuperadminDashboard />} /> {/* Vista principal */}
-    <Route path="establecer-roles" element={<UpdateRoles />} />
-    <Route path="roles" element={<Roles />} /> {/* ✅ Ahora se puede acceder a /superadmin/roles */}
-    <Route path="usuarios" element={<Usuarios />} />
-
-  </Route>
-</Route>
-
-
-
+      <Route path="/superadmin" element={<SuperadminPage />}>
+        <Route path="roles" element={<Roles />} /> {/* ✅ Contenido dinámico */}
+      </Route>
+    </Route>
 
 
         </Route>
-
-        {/* ✅ Página de acceso no autorizado */}
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
-
+ 
         {/* ✅ Página 404 */}
         <Route path="*" element={<Pagina404 />} />
       </Routes>

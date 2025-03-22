@@ -1,3 +1,6 @@
+//  Este middleware protege las rutas verificando que el usuario tenga un token JWT válido antes 
+// de permitirle acceder a contenido restringido.
+
 const jwt = require("jsonwebtoken");
 
 // Middleware para verificar el token en las solicitudes protegidas
