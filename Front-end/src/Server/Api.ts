@@ -53,6 +53,22 @@ const getRequest = async <T>(url: string, token?: string): Promise<T> => {
   }
 };
 
+// Función para hacer una solicitud DELETE
+// En Api.ts
+export const deleteRequest = async (url: string, token: string) => {
+  const response = await fetch(url, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+  return data;
+};
+
+
 // 📌 Función PUT para actualizar roles u otros datos
 const putRequest = async <T>(url: string, data: Record<string, unknown>): Promise<T> => {
   try {

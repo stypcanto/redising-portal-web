@@ -65,7 +65,10 @@ router.put("/update-role", verifySuperadmin, async (req, res) => {
 // 🔹 Ruta para obtener todos los usuarios
 router.get("/users", verifySuperadmin, async (req, res) => {
   try {
-    const users = await pool.query("SELECT id, dni, nombres, rol FROM personal_cenate");
+    
+    // esto es Impotnte para capturar la informacion de tabla
+    const users = await pool.query("SELECT id, dni, nombres, apellido_paterno, apellido_materno, rol FROM personal_cenate");
+
     
     if (users.rowCount === 0) {
       return res.status(404).json({ success: false, message: "No hay usuarios registrados" });
