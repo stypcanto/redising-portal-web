@@ -81,6 +81,32 @@ app.get("/personal", async (req, res) => {
   }
 });
 
+// 📌 Ruta para eliminar un usuario
+
+
+app.delete("/admin/delete-user/:id", async (req, res) => {
+  const userId = req.params.id; // Obtiene el ID del usuario desde los parámetros de la URL
+
+  try {
+    // Elimina el usuario de la base de datos utilizando el ID
+    const result = await pool.query("DELETE FROM personal_cenate WHERE id = $1 RETURNING *", [userId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Usuario no encontrado" });
+    }
+
+    res.json({
+      success: true,
+      message: "Usuario eliminado correctamente",
+    });
+  } catch (error) {
+    console.error("❌ Error al eliminar usuario:", error);
+    res.status(500).json({ success: false, message: "Error al eliminar usuario" });
+  }
+});
+
+
+
 // ❌ Middleware para manejar rutas inexistentes
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Ruta no encontrada 🚫" });

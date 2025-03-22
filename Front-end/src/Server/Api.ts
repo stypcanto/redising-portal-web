@@ -54,19 +54,25 @@ const getRequest = async <T>(url: string, token?: string): Promise<T> => {
 };
 
 // Función para hacer una solicitud DELETE
-// En Api.ts
-export const deleteRequest = async (url: string, token: string) => {
-  const response = await fetch(url, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
-    },
-  });
 
-  const data = await response.json();
-  return data;
+
+export const deleteRequest = async (userId: number, token: string) => {
+  try {
+    const response = await api.delete(`/admin/delete-user/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;  // O devuelve lo que necesitas
+  } catch (error) {
+    console.error("Error al eliminar el usuario:", error);
+    throw error;
+  }
 };
+
+
+
 
 
 // 📌 Función PUT para actualizar roles u otros datos
@@ -117,7 +123,8 @@ const loginUser = async (dni: string, password: string): Promise<ApiResponse> =>
 
 // 📌 Obtener perfil del usuario autenticado
 const getProfile = async (): Promise<ApiResponse> => {
-  const token = localStorage.getItem("authToken, response.token");
+  const token = localStorage.getItem("authToken");
+
 
   if (!token) {
     console.error("❌ No hay token en localStorage");

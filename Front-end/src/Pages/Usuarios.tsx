@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import { Eye, Edit, Trash2 } from "lucide-react"; // Iconos para acciones
-import { getRequest, deleteRequest } from "../Server/Api"; // Función para hacer GET y DELETE desde la API
+import { Eye, Edit, Trash2 } from "lucide-react";
+import { getRequest, deleteRequest } from "../Server/Api";
 
 // Definir la interfaz para la respuesta de la API
 interface Usuario {
   id: number;
   nombres: string;
-  apellido_paterno?: string;  // Hacer opcional
-  apellido_materno?: string;  // Hacer opcional
+  apellido_paterno?: string;
+  apellido_materno?: string;
   dni: string;
   rol: string;
 }
@@ -18,84 +18,105 @@ interface ApiResponse {
 }
 
 const Usuarios = () => {
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]); // Tipar el estado de los usuarios
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>(""); // Para manejar errores y mostrar mensajes de error si es necesario
-  
-  // Estado para el modal
+  const [error, setError] = useState<string>("");
+  const [cantidadPorPagina, setCantidadPorPagina] = useState<number>(10); // Estado para controlar la cantidad de datos por página
+  const [paginaActual, setPaginaActual] = useState<number>(1); // Estado para manejar la página actual
   const [showModal, setShowModal] = useState(false);
   const [usuarioAEliminar, setUsuarioAEliminar] = useState<Usuario | null>(null);
 
   useEffect(() => {
-    let isMounted = true; // 🔹 Variable para controlar si el componente está montado
-  
+    let isMounted = true;
+
     const fetchUsuarios = async () => {
       const token = localStorage.getItem("authToken");
-      console.log("Token en localStorage:", token); // Verifica el token
-      
       if (!token) {
         console.error("❌ No hay token en localStorage");
         setError("No estás autenticado");
         setLoading(false);
         return;
       }
-  
+
       try {
         const response = await getRequest<ApiResponse>("/admin/users", token);
-        console.log("Respuesta de la API:", response); // Verifica los datos que llegan
-  
         if (response && response.success && Array.isArray(response.data)) {
           if (isMounted) {
-            setUsuarios(response.data); // Establece los usuarios en el estado
-            console.log("Usuarios obtenidos:", response.data); // Verifica que los usuarios se recibieron correctamente
+            setUsuarios(response.data);
           }
         } else {
           setError("Error al obtener usuarios: Respuesta inválida");
         }
       } catch (error) {
-        console.error("❌ Error al obtener usuarios:", error);
         setError("Error al obtener los usuarios");
       } finally {
-        if (isMounted) {
-          setLoading(false); // Cambia el estado de carga
-        }
+        setLoading(false);
       }
     };
-  
+
     fetchUsuarios();
-  
+
     return () => {
       isMounted = false;
     };
   }, []);
-  
-  // Función para manejar la apertura del modal
+
+  // Función para manejar el cambio de cantidad de elementos por página
+  const handleCantidadChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setCantidadPorPagina(Number(e.target.value));
+    setPaginaActual(1); // Resetear a la primera página cuando se cambia la cantidad
+  };
+
+  // Obtener los usuarios a mostrar según la página actual y la cantidad por página
+  const usuariosPorPagina = usuarios.slice(
+    (paginaActual - 1) * cantidadPorPagina,
+    paginaActual * cantidadPorPagina
+  );
+
+  // Función para cambiar de página
+  const handlePageChange = (page: number) => {
+    setPaginaActual(page);
+  };
+
+  // Funciones para "Anterior" y "Siguiente"
+  const handlePreviousPage = () => {
+    if (paginaActual > 1) {
+      setPaginaActual(paginaActual - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (paginaActual < totalPages) {
+      setPaginaActual(paginaActual + 1);
+    }
+  };
+
   const openModal = (usuario: Usuario) => {
     setUsuarioAEliminar(usuario);
     setShowModal(true);
   };
 
-  // Función para cerrar el modal
   const handleCloseModal = () => {
     setShowModal(false);
     setUsuarioAEliminar(null);
   };
 
-  // Función para eliminar el usuario
+  // Función de eliminación
   const handleDelete = async (userId: number) => {
-    try {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        console.error("❌ No hay token en localStorage");
-        return;
-      }
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      console.error("❌ No hay token en localStorage");
+      return;
+    }
 
-      // Llamada a la API para eliminar al usuario
-      const response = await deleteRequest(`/admin/delete-user/${userId}`, token);
+    try {
+      // const response = await deleteRequest(`/admin/delete-user/${userId}`, token);
+      const response = await deleteRequest(userId, token);  
       if (response.success) {
-        // Si la eliminación fue exitosa, actualizamos la lista de usuarios
-        setUsuarios((prevUsuarios) => prevUsuarios.filter((user) => user.id !== userId));
-        setShowModal(false); // Cerramos el modal después de la eliminación
+        setUsuarios((prevUsuarios) =>
+          prevUsuarios.filter((user) => user.id !== userId)
+        );
+        setShowModal(false); // Cerrar el modal después de la eliminación
       } else {
         console.error("❌ Error al eliminar el usuario");
       }
@@ -104,13 +125,43 @@ const Usuarios = () => {
     }
   };
 
+  // Calcular el número total de páginas
+  const totalPages = Math.ceil(usuarios.length / cantidadPorPagina);
+
   return (
     <div className="p-6 bg-white rounded-lg shadow-md">
-      <h1 className="mb-4 text-lg font-bold text-center text-[#1a2850]">
-        Listado de Usuarios
-      </h1>
+      <h1 className="mb-4 text-lg font-bold text-center text-[#1a2850]">Listado de Usuarios</h1>
 
-      {/* ✅ Mostrar la tabla solo cuando hay datos */}
+      {/* Botón para Añadir Usuario - Movido a la parte superior izquierda */}
+      <div className="flex justify-start">
+        <button
+          className="px-4 py-2 text-white bg-blue-500 rounded-md shadow-md hover:bg-blue-600"
+          onClick={() => alert("Funcionalidad para añadir usuario aquí")}
+        >
+          Añadir usuario
+        </button>
+      </div>
+
+      {/* Selector de cantidad de entradas por página */}
+      <div className="flex justify-end mb-4">
+        <label htmlFor="cantidad" className="mr-2 text-sm text-[#1a2850]">
+          Mostrar:
+        </label>
+        <select
+          id="cantidad"
+          className="px-2 py-1 border border-gray-300 rounded-md"
+          value={cantidadPorPagina}
+          onChange={handleCantidadChange}
+        >
+          <option value={2}>2</option>
+          <option value={5}>5</option>
+          <option value={10}>10</option>
+          <option value={25}>25</option>
+          <option value={50}>50</option>
+          <option value={100}>100</option>
+        </select>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border border-collapse border-gray-300">
           <thead>
@@ -130,14 +181,14 @@ const Usuarios = () => {
                   Cargando usuarios...
                 </td>
               </tr>
-            ) : usuarios.length === 0 ? (
+            ) : usuariosPorPagina.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-3 text-center text-gray-500">
                   No hay usuarios registrados.
                 </td>
               </tr>
             ) : (
-              usuarios.map((usuario) => (
+              usuariosPorPagina.map((usuario) => (
                 <tr key={usuario.id} className="hover:bg-gray-50">
                   <td className="px-4 py-2 border">{usuario.nombres}</td>
                   <td className="px-4 py-2 border">{usuario.apellido_paterno || "N/A"}</td>
@@ -165,6 +216,35 @@ const Usuarios = () => {
         </table>
       </div>
 
+      {/* Paginación */}
+      <div className="flex items-center justify-center mt-4 space-x-2">
+        <button
+          className="px-4 py-2 text-blue-500 bg-white border rounded-md disabled:opacity-50"
+          onClick={handlePreviousPage}
+          disabled={paginaActual === 1}
+        >
+          Anterior
+        </button>
+
+        {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+          <button
+            key={page}
+            className={`px-4 py-2 rounded-md border ${paginaActual === page ? "bg-blue-500 text-white" : "bg-white text-blue-500"}`}
+            onClick={() => handlePageChange(page)}
+          >
+            {page}
+          </button>
+        ))}
+
+        <button
+          className="px-4 py-2 text-blue-500 bg-white border rounded-md disabled:opacity-50"
+          onClick={handleNextPage}
+          disabled={paginaActual === totalPages}
+        >
+          Siguiente
+        </button>
+      </div>
+
       {/* Modal de confirmación */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-30">
@@ -187,7 +267,7 @@ const Usuarios = () => {
                 className="px-4 py-2 text-white bg-red-600 rounded-md"
                 onClick={() => {
                   if (usuarioAEliminar) {
-                    handleDelete(usuarioAEliminar.id);
+                    handleDelete(usuarioAEliminar.id); // Asegúrate de pasar el ID correcto
                   }
                 }}
               >
