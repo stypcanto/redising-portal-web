@@ -1,5 +1,6 @@
 // tailwind.config.js
-module.exports = {
+/** @type {import('tailwindcss').Config} */
+export default {
   content: [
     "./index.html", // Si tienes un index.html en la raíz
     "./src/**/*.{js,jsx,ts,tsx}", // Escanea todos los archivos en src con JS, JSX, TS y TSX

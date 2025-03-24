@@ -14,93 +14,80 @@ const AddUsuarioModal = ({ showModal, handleClose, handleAddUser }) => {
     profesion: "",
     especialidad: "",
     tipo_contrato: "",
-    rol: "Usuario", // Rol por defecto
-    password: "12345678", // Contraseña por defecto
+    rol: "Usuario",
+    password: "",
   });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = () => {
-    // Llamar a la función que pasa como prop para agregar el usuario
+    if (!formData.nombres || !formData.apellido_paterno || !formData.dni) {
+      alert("Por favor, completa todos los campos obligatorios.");
+      return;
+    }
+
+    if (formData.dni.length !== 8 || isNaN(formData.dni)) {
+      alert("El DNI debe tener 8 dígitos numéricos.");
+      return;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(formData.correo)) {
+      alert("Por favor, introduce un correo válido.");
+      return;
+    }
+
     handleAddUser(formData);
-    handleClose(); // Cerrar el modal después de agregar el usuario
+    handleClose();
   };
 
+  const fields = [
+    { label: "Nombres", name: "nombres", type: "text" },
+    { label: "Apellido Paterno", name: "apellido_paterno", type: "text" },
+    { label: "Apellido Materno", name: "apellido_materno", type: "text" },
+    { label: "DNI", name: "dni", type: "text" },
+    { label: "Correo", name: "correo", type: "email" },
+    { label: "Teléfono", name: "telefono", type: "text" },
+    { label: "Fecha de Nacimiento", name: "fecha_nacimiento", type: "date" },
+    { label: "Sexo", name: "sexo", type: "text" },
+    { label: "Domicilio", name: "domicilio", type: "text" },
+    { label: "Profesión", name: "profesion", type: "text" },
+    { label: "Especialidad", name: "especialidad", type: "text" },
+    { label: "Tipo de Contrato", name: "tipo_contrato", type: "text" },
+  ];
+
+  if (!showModal) return null;
+
   return (
-    <div
-      className={`fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 ${showModal ? "block" : "hidden"}`}
-    >
-      <div className="p-6 bg-white rounded-lg w-96">
-        <h2 className="mb-4 text-xl font-semibold">Agregar Usuario</h2>
+    <div className="fixed inset-0 flex items-center justify-center p-4 bg-gray-800 bg-opacity-50">
+      <div className="w-full max-w-4xl p-6 bg-white rounded-lg">
+        <h2 className="mb-6 text-2xl font-semibold text-center">Agregar Usuario</h2>
 
-        <div className="mb-4">
-          <label htmlFor="nombres" className="block">Nombres:</label>
-          <input
-            type="text"
-            id="nombres"
-            name="nombres"
-            value={formData.nombres}
-            onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
-          />
+        {/* Grid de 3 columnas en pantallas grandes, 1 columna en pantallas pequeñas */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {fields.map(({ label, name, type }) => (
+            <div key={name} className="flex flex-col">
+              <label htmlFor={name} className="mb-1 font-medium text-gray-700">{label}:</label>
+              <input
+                type={type}
+                id={name}
+                name={name}
+                value={formData[name]}
+                onChange={handleInputChange}
+                className="p-2 border border-gray-300 rounded-md focus:outline-blue-500"
+              />
+            </div>
+          ))}
         </div>
 
-        <div className="mb-4">
-          <label htmlFor="apellido_paterno" className="block">Apellido Paterno:</label>
-          <input
-            type="text"
-            id="apellido_paterno"
-            name="apellido_paterno"
-            value={formData.apellido_paterno}
-            onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="apellido_materno" className="block">Apellido Materno:</label>
-          <input
-            type="text"
-            id="apellido_materno"
-            name="apellido_materno"
-            value={formData.apellido_materno}
-            onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label htmlFor="dni" className="block">DNI:</label>
-          <input
-            type="text"
-            id="dni"
-            name="dni"
-            value={formData.dni}
-            onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
-          />
-        </div>
-
-        {/* Otros campos como correo, teléfono, etc. */}
-        {/* Aquí deberías incluir todos los demás campos necesarios, como correo, telefono, etc. */}
-
-        <div className="flex justify-end space-x-4">
-          <button
-            className="px-4 py-2 text-white bg-gray-500 rounded-md"
-            onClick={handleClose}
-          >
+        {/* Botones */}
+        <div className="flex justify-end mt-6 space-x-4">
+          <button className="px-4 py-2 text-white bg-gray-500 rounded-md hover:bg-gray-600" onClick={handleClose}>
             Cancelar
           </button>
-          <button
-            className="px-4 py-2 text-white bg-blue-600 rounded-md"
-            onClick={handleSubmit}
-          >
+          <button className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700" onClick={handleSubmit}>
             Agregar Usuario
           </button>
         </div>
