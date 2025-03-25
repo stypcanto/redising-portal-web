@@ -21,6 +21,7 @@ import Roles from "./Pages/Roles";
 import Usuarios from "./Pages/Usuarios";
 
 
+
 const rootElement = document.getElementById("root");
 if (!rootElement) {
   throw new Error("No se encontró el elemento #root en index.html");

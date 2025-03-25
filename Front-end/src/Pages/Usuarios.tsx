@@ -10,15 +10,45 @@ import LoadingSpinner from "../components/Modal/LoadingSpinner";
 import ConfirmationModal from "../components/Modal/ConfirmationModal";
 
 interface Usuario {
+  // Identificación
   id: number;
-  nombres: string;
-  apellido_paterno?: string;
-  apellido_materno?: string;
   dni: string;
-  rol: string;
-  email?: string;
-  telefono?: string;
+
+  // Datos personales
+  nombres: string;
+  apellido_paterno: string;
+  apellido_materno: string;
+  fecha_nacimiento?: string | null; // Formato: YYYY-MM-DD
+  sexo?: 'Masculino' | 'Femenino' | 'Otro' | string | null;
+
+  // Información de contacto
+  correo: string;
+  telefono?: string | null;
+  domicilio?: string | null;
+
+  // Información profesional
+  profesion?: string | null;
+  especialidad?: string | null;
+  colegiatura?: string | null;
+  tipo_contrato?: string | null;
+
+  // Autenticación
+  password?: string | null;
+  rol: 'Superadmin' | 'Admin' | 'Usuario' | string; // Valores posibles según tu DB
+  estado: boolean; // true = activo, false = inactivo
+
+  // Auditoría
+  fecha_registro: string; // Formato timestamp ISO 8601
 }
+
+// Versión "segura" para mostrar (excluye campos sensibles)
+type UsuarioSafe = Omit<Usuario, 'id' | 'password' | 'estado'>;
+
+// Función para obtener los datos seguros
+const getUsuarioSafe = (usuario: Usuario): UsuarioSafe => {
+  const { id, password, estado, ...safeData } = usuario;
+  return safeData;
+};
 
 interface ApiResponse {
   success: boolean;
@@ -54,14 +84,14 @@ const Usuarios = () => {
         setLoading(false);
         return;
       }
-
+  
       const response = await getRequest<ApiResponse>("/admin/users", token);
       if (response?.success && Array.isArray(response.data)) {
         setUsuarios(response.data);
         setTotalUsers(response.total || response.data.length);
       } else {
-        setError("Error al obtener usuarios");
-        toast.error("Error al cargar los usuarios");
+        setError(response?.message || "Error al obtener usuarios");
+        toast.error(response?.message || "Error al cargar los usuarios");
       }
     } catch (err) {
       setError("Error al obtener los usuarios");
@@ -110,12 +140,12 @@ const Usuarios = () => {
 
   // Filtrado y paginación
   const filteredUsers = searchTerm
-    ? sortedUsers.filter(user => 
-        user.dni.includes(searchTerm) || 
-        user.nombres.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (user.apellido_paterno && user.apellido_paterno.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (user.apellido_materno && user.apellido_materno.toLowerCase().includes(searchTerm.toLowerCase()))
-      )
+    ? sortedUsers.filter(user =>
+      user.dni.includes(searchTerm) ||
+      user.nombres.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.apellido_paterno && user.apellido_paterno.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (user.apellido_materno && user.apellido_materno.toLowerCase().includes(searchTerm.toLowerCase()))
+    )
     : sortedUsers;
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
@@ -133,7 +163,7 @@ const Usuarios = () => {
   };
 
   const handleEditUser = (updatedUser: Usuario) => {
-    setUsuarios(usuarios.map(user => 
+    setUsuarios(usuarios.map(user =>
       user.id === updatedUser.id ? updatedUser : user
     ));
     toast.success("Usuario actualizado correctamente");
@@ -142,16 +172,16 @@ const Usuarios = () => {
 
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
-  
+
     try {
       const token = localStorage.getItem("authToken");
       if (!token) {
         toast.error("No estás autenticado");
         return;
       }
-  
+
       const response = await deleteRequest(`/admin/delete-user/${selectedUser.id}`, token);
-      
+
       if (response.success) {
         setUsuarios(usuarios.filter(user => user.id !== selectedUser.id));
         toast.success("Usuario eliminado correctamente");
@@ -178,7 +208,7 @@ const Usuarios = () => {
     <div className="container px-4 py-8 mx-auto">
       <div className="p-6 bg-white rounded-lg shadow-md">
         <h1 className="mb-6 text-2xl font-bold text-gray-800">Gestión de Usuarios</h1>
-        
+
         {/* Header with search and add button */}
         <div className="flex flex-col items-start justify-between gap-4 mb-6 md:flex-row md:items-center">
           <div className="relative w-full md:w-64">
@@ -196,7 +226,7 @@ const Usuarios = () => {
               }}
             />
           </div>
-          
+
           <button
             onClick={() => setShowAddModal(true)}
             className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -216,36 +246,36 @@ const Usuarios = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th 
-                    scope="col" 
+                  <th
+                    scope="col"
                     className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
                     onClick={() => requestSort('nombres')}
                   >
                     Nombre {renderSortIcon('nombres')}
                   </th>
-                  <th 
-                    scope="col" 
+                  <th
+                    scope="col"
                     className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
                     onClick={() => requestSort('apellido_paterno')}
                   >
                     Apellido Paterno {renderSortIcon('apellido_paterno')}
                   </th>
-                  <th 
-                    scope="col" 
+                  <th
+                    scope="col"
                     className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
                     onClick={() => requestSort('apellido_materno')}
                   >
                     Apellido Materno {renderSortIcon('apellido_materno')}
                   </th>
-                  <th 
-                    scope="col" 
+                  <th
+                    scope="col"
                     className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
                     onClick={() => requestSort('dni')}
                   >
                     DNI {renderSortIcon('dni')}
                   </th>
-                  <th 
-                    scope="col" 
+                  <th
+                    scope="col"
                     className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
                     onClick={() => requestSort('rol')}
                   >
@@ -273,56 +303,55 @@ const Usuarios = () => {
                         {user.dni}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.rol === 'admin' 
-                            ? 'bg-green-100 text-green-800' 
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.rol === 'admin'
+                            ? 'bg-green-100 text-green-800'
                             : 'bg-blue-100 text-blue-800'
-                        }`}>
+                          }`}>
                           {user.rol}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-right whitespace-nowrap">
-                      
-                      
-                  
-                    {/* Botón Eye - Ver detalles */}
-  <button
-    onClick={() => {
-      setSelectedUser(user);
-      setShowViewModal(true);
-    }}
-    className="mr-4 text-blue-600 hover:text-blue-900"
-    title="Ver detalles"
-  >
-    <Eye className="w-5 h-5" />
-  </button>
+
+
+
+                        {/* Botón Eye - Ver detalles */}
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowViewModal(true);
+                          }}
+                          className="mr-4 text-blue-600 hover:text-blue-900"
+                          title="Ver detalles"
+                        >
+                          <Eye className="w-5 h-5" />
+                        </button>
 
 
 
                         {/* Botón Edit - Editar usuario */}
-  <button
-    onClick={() => {
-      setSelectedUser(user);
-      setShowEditModal(true);
-    }}
-    className="mr-4 text-yellow-600 hover:text-yellow-900"
-    title="Editar"
-  >
-    <Edit className="w-5 h-5" />
-  </button>
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowEditModal(true);
+                          }}
+                          className="mr-4 text-yellow-600 hover:text-yellow-900"
+                          title="Editar"
+                        >
+                          <Edit className="w-5 h-5" />
+                        </button>
 
 
-                     {/* Botón Trash - Eliminar usuario */}
-                     <button
-  onClick={() => {
-    setSelectedUser(user);
-    setShowDeleteModal(true); // Mostrar modal de confirmación
-  }}
-  className="text-red-600 hover:text-red-900"
-  title="Eliminar"
->
-  <Trash2 className="w-5 h-5" />
-</button>
+                        {/* Botón Trash - Eliminar usuario */}
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowDeleteModal(true); // Mostrar modal de confirmación
+                          }}
+                          className="text-red-600 hover:text-red-900"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
                       </td>
                     </tr>
                   ))
@@ -356,7 +385,7 @@ const Usuarios = () => {
               </select>
               <span className="text-sm text-gray-700">por página</span>
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-700">
                 Mostrando <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> a{' '}
@@ -366,7 +395,7 @@ const Usuarios = () => {
                 de <span className="font-medium">{filteredUsers.length}</span> usuarios
               </span>
             </div>
-            
+
             <div className="flex space-x-1">
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
@@ -386,7 +415,7 @@ const Usuarios = () => {
                 } else {
                   pageNum = currentPage - 2 + i;
                 }
-                
+
                 return (
                   <button
                     key={pageNum}
@@ -411,42 +440,42 @@ const Usuarios = () => {
 
       {/* Modals */}
       <AddUsuarioModal
-  showModal={showAddModal}  
-  handleClose={() => setShowAddModal(false)}  
-  handleAddUser={handleAddUser}  
-/>
+        showModal={showAddModal}
+        handleClose={() => setShowAddModal(false)}
+        handleAddUser={handleAddUser}
+      />
 
 
 
       {selectedUser && (
         <>
-         <EditUsuarioModal
-         isOpen={showEditModal}  
-        onClose={() => setShowEditModal(false)}  
-        userData={selectedUser}  
-         onSave={handleEditUser}  
+          <EditUsuarioModal
+            isOpen={showEditModal}
+            onClose={() => setShowEditModal(false)}
+            userData={selectedUser}
+            onSave={handleEditUser}
           />
 
 
 
-<ViewUsuarioModal
-      isOpen={showViewModal}
-      onClose={() => setShowViewModal(false)}
-      userData={selectedUser}
-    />
+          <ViewUsuarioModal
+            isOpen={showViewModal}
+            onClose={() => setShowViewModal(false)}
+            userData={selectedUser}
+          />
 
 
 
-<ConfirmationModal
-  isOpen={showDeleteModal}
-  onCancel={() => {
-    setSelectedUser(null);
-    setShowDeleteModal(false);
-  }}
-  onConfirm={handleDeleteUser}
-  title="Confirmar eliminación"
-  message={`¿Estás seguro que deseas eliminar al usuario ${selectedUser?.nombres}?`}
-/>
+          <ConfirmationModal
+            isOpen={showDeleteModal}
+            onCancel={() => {
+              setSelectedUser(null);
+              setShowDeleteModal(false);
+            }}
+            onConfirm={handleDeleteUser}
+            title="Confirmar eliminación"
+            message={`¿Estás seguro que deseas eliminar al usuario ${selectedUser?.nombres}?`}
+          />
 
 
         </>

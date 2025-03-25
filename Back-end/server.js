@@ -4,31 +4,31 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
-const adminRoutes = require("./routes/adminRoutes"); // 📌 Agregada nueva ruta para administración
+const adminRoutes = require("./routes/adminRoutes");
 const pool = require("./config/db");
 
 const app = express();
 const port = process.env.PORT || 5001;
 
-// 🛡️ Middleware
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// 📝 Logger para ver las peticiones en consola
+// Logger
 app.use((req, res, next) => {
   console.log(`📡 ${req.method} ${req.url}`);
   next();
 });
 
-// 📌 Rutas
+// Rutas
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
-app.use("/admin", adminRoutes); // 📌 Agregado para manejar administración (Superadmin)
+app.use("/admin", adminRoutes);
 
-// 🌍 Ruta de prueba
+// Ruta de prueba
 app.get("/", (req, res) => res.send("Servidor corriendo 🚀"));
 
-// 🔹 Ruta para obtener datos del usuario desde el token
+// Ruta para datos del usuario desde token
 app.get("/portaladmin", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
@@ -44,8 +44,6 @@ app.get("/portaladmin", async (req, res) => {
     }
 
     const { dni } = decoded;
-
-    // 🔹 Busca al usuario en la base de datos
     const result = await pool.query("SELECT * FROM personal_cenate WHERE dni = $1", [dni]);
 
     if (result.rows.length === 0) {
@@ -53,16 +51,12 @@ app.get("/portaladmin", async (req, res) => {
     }
 
     const user = result.rows[0];
+    const userData = { ...user };
+    delete userData.password;
 
     res.json({
       success: true,
-      user: {
-        nombres: user.nombres.trim(),
-        apellido_paterno: user.apellido_paterno.trim(),
-        apellido_materno: user.apellido_materno.trim(),
-        correo: user.correo,
-        rol: user.rol, // 📌 Agregado para devolver el rol del usuario
-      }
+      user: userData
     });
   } catch (error) {
     console.error("❌ Error en /portaladmin:", error);
@@ -70,47 +64,36 @@ app.get("/portaladmin", async (req, res) => {
   }
 });
 
-// 🔹 Ruta para obtener toda la data de personal
+// Ruta para obtener toda la data de personal
 app.get("/personal", async (req, res) => {
   try {
-    const personal = await pool.query("SELECT * FROM personal_cenate");
-    res.json({ success: true, data: personal.rows });
+    const personal = await pool.query(`
+      SELECT 
+        id, dni, nombres, apellido_paterno, apellido_materno,
+        fecha_nacimiento, sexo, correo, telefono, domicilio,
+        profesion, especialidad, colegiatura, tipo_contrato,
+        rol, fecha_registro, estado
+      FROM personal_cenate
+    `);
+    
+    res.json({ 
+      success: true, 
+      data: personal.rows.map(user => {
+        const userData = { ...user };
+        delete userData.password;
+        return userData;
+      })
+    });
   } catch (error) {
     console.error("❌ Error en /personal:", error);
     res.status(500).json({ success: false, message: "Error en el servidor" });
   }
 });
 
-// 📌 Ruta para eliminar un usuario
-
-
-app.delete("/admin/delete-user/:id", async (req, res) => {
-  const userId = req.params.id; // Obtiene el ID del usuario desde los parámetros de la URL
-
-  try {
-    // Elimina el usuario de la base de datos utilizando el ID
-    const result = await pool.query("DELETE FROM personal_cenate WHERE id = $1 RETURNING *", [userId]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: "Usuario no encontrado" });
-    }
-
-    res.json({
-      success: true,
-      message: "Usuario eliminado correctamente",
-    });
-  } catch (error) {
-    console.error("❌ Error al eliminar usuario:", error);
-    res.status(500).json({ success: false, message: "Error al eliminar usuario" });
-  }
-});
-
-
-
-// ❌ Middleware para manejar rutas inexistentes
+// Middleware para rutas inexistentes
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Ruta no encontrada 🚫" });
 });
 
-// 🚀 Iniciar servidor
+// Iniciar servidor
 app.listen(port, () => console.log(`✅ Servidor en http://localhost:${port}`));

@@ -1,1 +1,18 @@
 @import "tailwindcss";
+/* En tu archivo de estilos principal */
+@media print, (html2canvas: true) {
+    * {
+      background: white !important;
+      color: black !important;
+      background-image: none !important;
+    }
+    
+    .bg-gradient-to-r, 
+    [class*="from-"], 
+    [class*="to-"],
+    [style*="gradient"],
+    [style*="oklch"] {
+      background: #2e63a6 !important;
+      background-image: none !important;
+    }
+  }

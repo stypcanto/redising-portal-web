@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import Menu from "../components/Menu/Menu.jsx";
 import { useEffect, useState } from "react";
 
+
 const SessionTimeout = ({ onLogout }) => {
   const [warning, setWarning] = useState(false);
   let timeout;
