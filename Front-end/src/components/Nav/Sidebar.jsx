@@ -48,7 +48,7 @@ const Sidebar = () => {
                   <Users className="mr-2" size={16} /> Usuarios
                 </Link>
                 <Link to="/superadmin/establecer-roles" className="flex items-center p-2 text-sm text-gray-600 rounded hover:bg-[#1a2850] hover:text-white">
-                  <Users className="mr-2" size={16} /> Establecer Roles
+                  <Users className="mr-2" size={16} /> Gestión de Roles de Usuarios
                 </Link>
               </div>
             )}

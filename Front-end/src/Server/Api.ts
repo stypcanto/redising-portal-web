@@ -66,7 +66,7 @@ export const getRequest = async <T>(url: string, token?: string): Promise<T> => 
 // 📌 Función para solicitudes POST
 export const postRequest = async <T>(
   url: string, 
-  data: Record<string, unknown>, 
+  data: object, // Cambiado de Record<string, unknown>
   token?: string
 ): Promise<T> => {
   try {
@@ -111,13 +111,14 @@ export const deleteRequest = async <T>(
 };
 
 // 📌 Autenticación y perfil
-interface RegisterUserData extends Record<string, unknown> {
+interface RegisterUserData  {
   dni: string;
   nombres: string;
   apellido_paterno: string;
   apellido_materno: string;
   correo: string;
   password: string;
+  rol?: string; // El rol podría ser opcional
 }
 
 // 📌 Registro de usuario
