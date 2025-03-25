@@ -22,8 +22,10 @@ interface Usuario {
 
 interface ApiResponse {
   success: boolean;
+  message?: string;
   data: Usuario[];
   total?: number;
+  error?: string;
 }
 
 const ITEMS_PER_PAGE_OPTIONS = [2, 5, 10, 20, 50, 100];
@@ -148,21 +150,29 @@ const Usuarios = () => {
         return;
       }
   
-      // Versión corregida:
-      await deleteRequest(`/admin/delete-user/${selectedUser.id}`, token);
+      const response = await deleteRequest(`/admin/delete-user/${selectedUser.id}`, token);
       
-      setUsuarios(usuarios.filter(user => user.id !== selectedUser.id));
-      toast.success("Usuario eliminado correctamente");
-      setSelectedUser(null);
+      if (response.success) {
+        setUsuarios(usuarios.filter(user => user.id !== selectedUser.id));
+        toast.success("Usuario eliminado correctamente");
+      } else {
+        toast.error(response.message || "Error al eliminar el usuario");
+      }
     } catch (error) {
-      toast.error("Error al eliminar el usuario");
+      toast.error("Error de conexión con el servidor");
+    } finally {
+      setSelectedUser(null);
+      setShowDeleteModal(false);
     }
   };
+
   // Render helpers
   const renderSortIcon = (key: keyof Usuario) => {
     if (!sortConfig || sortConfig.key !== key) return null;
     return sortConfig.direction === 'asc' ? '↑' : '↓';
   };
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   return (
     <div className="container px-4 py-8 mx-auto">
@@ -272,35 +282,47 @@ const Usuarios = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-right whitespace-nowrap">
-                        <button
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowViewModal(true);
-                          }}
-                          className="mr-4 text-blue-600 hover:text-blue-900"
-                          title="Ver detalles"
-                        >
-                          <Eye className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowEditModal(true);
-                          }}
-                          className="mr-4 text-yellow-600 hover:text-yellow-900"
-                          title="Editar"
-                        >
-                          <Edit className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedUser(user);
-                          }}
-                          className="text-red-600 hover:text-red-900"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
+                      
+                      
+                  
+                    {/* Botón Eye - Ver detalles */}
+  <button
+    onClick={() => {
+      setSelectedUser(user);
+      setShowViewModal(true);
+    }}
+    className="mr-4 text-blue-600 hover:text-blue-900"
+    title="Ver detalles"
+  >
+    <Eye className="w-5 h-5" />
+  </button>
+
+
+
+                        {/* Botón Edit - Editar usuario */}
+  <button
+    onClick={() => {
+      setSelectedUser(user);
+      setShowEditModal(true);
+    }}
+    className="mr-4 text-yellow-600 hover:text-yellow-900"
+    title="Editar"
+  >
+    <Edit className="w-5 h-5" />
+  </button>
+
+
+                     {/* Botón Trash - Eliminar usuario */}
+                     <button
+  onClick={() => {
+    setSelectedUser(user);
+    setShowDeleteModal(true); // Mostrar modal de confirmación
+  }}
+  className="text-red-600 hover:text-red-900"
+  title="Eliminar"
+>
+  <Trash2 className="w-5 h-5" />
+</button>
                       </td>
                     </tr>
                   ))
@@ -408,20 +430,23 @@ const Usuarios = () => {
 
 
 <ViewUsuarioModal
-  isOpen={showViewModal}
-  onClose={() => setShowViewModal(false)}
-  userData={selectedUser}  // Aquí cambiamos "user" por "userData"
- />
+      isOpen={showViewModal}
+      onClose={() => setShowViewModal(false)}
+      userData={selectedUser}
+    />
+
 
 
 <ConfirmationModal
-  isOpen={!!selectedUser}
-  onCancel={() => setSelectedUser(null)} // Cambia "onClose" por "onCancel"
+  isOpen={showDeleteModal}
+  onCancel={() => {
+    setSelectedUser(null);
+    setShowDeleteModal(false);
+  }}
   onConfirm={handleDeleteUser}
   title="Confirmar eliminación"
-  message={`¿Estás seguro que deseas eliminar al usuario ${selectedUser?.nombres}? Esta acción no se puede deshacer.`}
+  message={`¿Estás seguro que deseas eliminar al usuario ${selectedUser?.nombres}?`}
 />
-
 
 
         </>

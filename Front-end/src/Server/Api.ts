@@ -96,13 +96,18 @@ export const putRequest = async <T>(
 };
 
 // 📌 Función para solicitudes DELETE
-export const deleteRequest = async <T>(
-  url: string,
-  token?: string
+// En tu archivo ../Server/Api.ts
+// 📌 Función para solicitudes DELETE - VERSIÓN CORREGIDA
+export const deleteRequest = async <T = any>(
+  endpoint: string,
+  token: string
 ): Promise<T> => {
   try {
-    const response = await api.delete<T>(url, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    const response = await axios.delete<T>(`${API_URL}${endpoint}`, {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
     });
     return response.data;
   } catch (error) {
