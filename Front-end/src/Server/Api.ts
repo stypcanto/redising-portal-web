@@ -31,110 +31,7 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// 📌 Función para solicitudes POST
-const postRequest = async <T>(url: string, data: Record<string, unknown>): Promise<T> => {
-  try {
-    const response = await api.post<T>(url, data);
-    return response.data;
-  } catch (error) {
-    throw handleAxiosError(error);
-  }
-};
-
-// 📌 Función para solicitudes GET
-const getRequest = async <T>(url: string, token?: string): Promise<T> => {
-  try {
-    const response = await api.get<T>(url, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-    return response.data;
-  } catch (error) {
-    throw handleAxiosError(error);
-  }
-};
-
-// Función para hacer una solicitud DELETE
-
-
-export const deleteRequest = async (userId: number, token: string) => {
-  try {
-    const response = await api.delete(`/admin/delete-user/${userId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    return response.data;  // O devuelve lo que necesitas
-  } catch (error) {
-    console.error("Error al eliminar el usuario:", error);
-    throw error;
-  }
-};
-
-
-
-
-
-// 📌 Función PUT para actualizar roles u otros datos
-const putRequest = async <T>(url: string, data: Record<string, unknown>): Promise<T> => {
-  try {
-    const token = localStorage.getItem("authToken"); // 🔹 Obtén el token desde localStorage
-    const response = await api.put<T>(url, data, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-    return response.data;
-  } catch (error) {
-    throw handleAxiosError(error);
-  }
-};
-
-
-// 📌 Autenticación y perfil
-interface RegisterUserData extends Record<string, unknown> {
-  dni: string;
-  nombres: string;
-  apellido_paterno: string;
-  apellido_materno: string;
-  correo: string;
-  password: string;
-}
-
-// 📌 Registro de usuario
-const registerUser = async (userData: RegisterUserData): Promise<ApiResponse> =>
-  await postRequest<ApiResponse>("/auth/register", userData);
-
-// 📌 Inicio de sesión con almacenamiento del token
-const loginUser = async (dni: string, password: string): Promise<ApiResponse> => {
-  console.log("🔹 Intentando login con:", dni, password);
-
-  const response = await postRequest<ApiResponse>("/auth/login", { dni, password });
-
-  console.log("📡 Respuesta del backend:", response);
-
-  if (!response.success || !response.token) {
-    console.error("❌ Error de autenticación: Credenciales incorrectas.");
-  } else {
-    localStorage.setItem("authToken", response.token);
-    console.log("✅ Token guardado en localStorage.");
-  }
-
-  return response;
-};
-
-// 📌 Obtener perfil del usuario autenticado
-const getProfile = async (): Promise<ApiResponse> => {
-  const token = localStorage.getItem("authToken");
-
-
-  if (!token) {
-    console.error("❌ No hay token en localStorage");
-    return { success: false, message: "No hay token disponible" };
-  }
-
-  return await getRequest<ApiResponse>("/user/portaladmin", token);
-};
-
-// 📌 Manejo de errores mejorado
+// Función para manejar errores de Axios
 const handleAxiosError = (error: unknown): ApiResponse => {
   const err = error as AxiosError<{ message?: string }>;
   const status = err.response?.status ?? 500;
@@ -154,5 +51,105 @@ const handleAxiosError = (error: unknown): ApiResponse => {
   return { success: false, message: errorMessage };
 };
 
-// 📌 Exportaciones en una sola línea
-export { getRequest, postRequest, putRequest, registerUser, loginUser, getProfile };
+// 📌 Función para solicitudes GET
+export const getRequest = async <T>(url: string, token?: string): Promise<T> => {
+  try {
+    const response = await api.get<T>(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return response.data;
+  } catch (error) {
+    throw handleAxiosError(error);
+  }
+};
+
+// 📌 Función para solicitudes POST
+export const postRequest = async <T>(
+  url: string, 
+  data: Record<string, unknown>, 
+  token?: string
+): Promise<T> => {
+  try {
+    const response = await api.post<T>(url, data, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return response.data;
+  } catch (error) {
+    throw handleAxiosError(error);
+  }
+};
+
+// 📌 Función para solicitudes PUT
+export const putRequest = async <T>(
+  url: string, 
+  data: Record<string, unknown>, 
+  token?: string
+): Promise<T> => {
+  try {
+    const response = await api.put<T>(url, data, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return response.data;
+  } catch (error) {
+    throw handleAxiosError(error);
+  }
+};
+
+// 📌 Función para solicitudes DELETE
+export const deleteRequest = async <T>(
+  url: string,
+  token?: string
+): Promise<T> => {
+  try {
+    const response = await api.delete<T>(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return response.data;
+  } catch (error) {
+    throw handleAxiosError(error);
+  }
+};
+
+// 📌 Autenticación y perfil
+interface RegisterUserData extends Record<string, unknown> {
+  dni: string;
+  nombres: string;
+  apellido_paterno: string;
+  apellido_materno: string;
+  correo: string;
+  password: string;
+}
+
+// 📌 Registro de usuario
+export const registerUser = async (userData: RegisterUserData): Promise<ApiResponse> =>
+  await postRequest<ApiResponse>("/auth/register", userData);
+
+// 📌 Inicio de sesión con almacenamiento del token
+export const loginUser = async (dni: string, password: string): Promise<ApiResponse> => {
+  console.log("🔹 Intentando login con:", dni, password);
+
+  const response = await postRequest<ApiResponse>("/auth/login", { dni, password });
+
+  console.log("📡 Respuesta del backend:", response);
+
+  if (!response.success || !response.token) {
+    console.error("❌ Error de autenticación: Credenciales incorrectas.");
+  } else {
+    localStorage.setItem("authToken", response.token);
+    console.log("✅ Token guardado en localStorage.");
+  }
+
+  return response;
+};
+
+// 📌 Obtener perfil del usuario autenticado
+export const getProfile = async (): Promise<ApiResponse> => {
+  const token = localStorage.getItem("authToken");
+
+  if (!token) {
+    console.error("❌ No hay token en localStorage");
+    return { success: false, message: "No hay token disponible" };
+  }
+
+  return await getRequest<ApiResponse>("/user/portaladmin", token);
+};

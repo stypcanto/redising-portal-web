@@ -1,7 +1,13 @@
-import { useEffect, useState } from "react";
-import { Eye, Edit, Trash2, Plus } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Eye, Edit, Trash2, Plus, Search } from "lucide-react";
 import { getRequest, deleteRequest } from "../Server/Api";
 import AddUsuarioModal from "../components/Modal/AddUsuarioModal";
+import EditUsuarioModal from "../components/Modal/EditUsuarioModal";
+import ViewUsuarioModal from "../components/Modal/ViewUsuarioModal";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import LoadingSpinner from "../components/Modal/LoadingSpinner";
+import ConfirmationModal from "../components/Modal/ConfirmationModal";
 
 interface Usuario {
   id: number;
@@ -10,269 +16,418 @@ interface Usuario {
   apellido_materno?: string;
   dni: string;
   rol: string;
+  email?: string;
+  telefono?: string;
 }
 
 interface ApiResponse {
   success: boolean;
   data: Usuario[];
+  total?: number;
 }
+
+const ITEMS_PER_PAGE_OPTIONS = [2, 5, 10, 20, 50, 100];
 
 const Usuarios = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
-  const [cantidadPorPagina, setCantidadPorPagina] = useState<number>(10);
-  const [paginaActual, setPaginaActual] = useState<number>(1);
-  const [showAddUsuarioModal, setShowAddUsuarioModal] = useState(false);
-  const [busquedaDni, setBusquedaDni] = useState<string>("");
-  const [showModal, setShowModal] = useState(false);
-  const [usuarioAEliminar, setUsuarioAEliminar] = useState<Usuario | null>(null);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<Usuario | null>(null);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Usuario; direction: 'asc' | 'desc' } | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchUsuarios = async () => {
+  // Función para cargar usuarios
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    try {
       const token = localStorage.getItem("authToken");
       if (!token) {
         setError("No estás autenticado");
         setLoading(false);
         return;
       }
-      try {
-        const response = await getRequest<ApiResponse>("/admin/users", token);
-        if (response?.success && Array.isArray(response.data) && isMounted) {
-          setUsuarios(response.data);
-        } else {
-          setError("Error al obtener usuarios");
-        }
-      } catch (error) {
-        setError("Error al obtener los usuarios");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUsuarios();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
-  const handleCantidadChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setCantidadPorPagina(Number(e.target.value));
-    setPaginaActual(1);
-  };
-
-  const handlePageChange = (page: number) => setPaginaActual(page);
-  const handlePreviousPage = () => paginaActual > 1 && setPaginaActual(paginaActual - 1);
-  const handleNextPage = () => paginaActual < totalPages && setPaginaActual(paginaActual + 1);
-
-  const totalPages = Math.ceil(usuarios.length / cantidadPorPagina);
-
-  const usuariosFiltrados = busquedaDni
-    ? usuarios.filter((usuario) => usuario.dni.includes(busquedaDni))
-    : usuarios;
-
-  const usuariosPorPagina = usuariosFiltrados.slice(
-    (paginaActual - 1) * cantidadPorPagina,
-    paginaActual * cantidadPorPagina
-  );
-
-  const openModal = (usuario: Usuario) => {
-    setUsuarioAEliminar(usuario);
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setUsuarioAEliminar(null);
-  };
-
-  const handleAddUsuario = (nombres: string, apellidoPaterno: string, apellidoMaterno: string, dni: string, rol: string) => {
-    const nuevoUsuario = {
-      id: usuarios.length + 1,
-      nombres,
-      apellido_paterno: apellidoPaterno,
-      apellido_materno: apellidoMaterno,
-      dni,
-      rol
-    };
-    setUsuarios([...usuarios, nuevoUsuario]);
-  };
-
-  
-  const handleDelete = async () => {
-    if (!usuarioAEliminar) return;
-    setLoading(true); // Indicar que está cargando
-    
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      console.error("❌ No hay token en localStorage");
-      setError("No estás autenticado");
-      setLoading(false);
-      return;
-    }
-  
-    try {
-      //const response = await deleteRequest(`/admin/users/${usuarioAEliminar.id}`, token);
-      const response = await deleteRequest(userId, token); 
-      if (response.success) {
-        setUsuarios((prev) => prev.filter((user) => user.id !== usuarioAEliminar.id));
-        handleCloseModal();
+      const response = await getRequest<ApiResponse>("/admin/users", token);
+      if (response?.success && Array.isArray(response.data)) {
+        setUsuarios(response.data);
+        setTotalUsers(response.total || response.data.length);
       } else {
-        console.error("❌ Error al eliminar el usuario");
-        setError("Error al eliminar el usuario");
+        setError("Error al obtener usuarios");
+        toast.error("Error al cargar los usuarios");
       }
-    } catch (error) {
-      console.error("❌ Error en la eliminación:", error);
-      setError("Ocurrió un error al intentar eliminar el usuario");
+    } catch (err) {
+      setError("Error al obtener los usuarios");
+      toast.error("Error de conexión con el servidor");
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  // Manejo de paginación
+  const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newItemsPerPage = Number(e.target.value);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Resetear a la primera página al cambiar items por página
   };
-  
-  
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
+  // Ordenamiento
+  const requestSort = (key: keyof Usuario) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedUsers = [...usuarios];
+  if (sortConfig) {
+    sortedUsers.sort((a, b) => {
+      if (a[sortConfig.key] < b[sortConfig.key]) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (a[sortConfig.key] > b[sortConfig.key]) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  }
+
+  // Filtrado y paginación
+  const filteredUsers = searchTerm
+    ? sortedUsers.filter(user => 
+        user.dni.includes(searchTerm) || 
+        user.nombres.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.apellido_paterno && user.apellido_paterno.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (user.apellido_materno && user.apellido_materno.toLowerCase().includes(searchTerm.toLowerCase()))
+      )
+    : sortedUsers;
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // CRUD Operations
+  const handleAddUser = (newUser: Omit<Usuario, 'id'>) => {
+    const userWithId = { ...newUser, id: Math.max(...usuarios.map(u => u.id), 0) + 1 };
+    setUsuarios([...usuarios, userWithId]);
+    toast.success("Usuario agregado correctamente");
+    setShowAddModal(false);
+  };
+
+  const handleEditUser = (updatedUser: Usuario) => {
+    setUsuarios(usuarios.map(user => 
+      user.id === updatedUser.id ? updatedUser : user
+    ));
+    toast.success("Usuario actualizado correctamente");
+    setShowEditModal(false);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
   
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        toast.error("No estás autenticado");
+        return;
+      }
+  
+      // Versión corregida:
+      await deleteRequest(`/admin/delete-user/${selectedUser.id}`, token);
+      
+      setUsuarios(usuarios.filter(user => user.id !== selectedUser.id));
+      toast.success("Usuario eliminado correctamente");
+      setSelectedUser(null);
+    } catch (error) {
+      toast.error("Error al eliminar el usuario");
+    }
+  };
+  // Render helpers
+  const renderSortIcon = (key: keyof Usuario) => {
+    if (!sortConfig || sortConfig.key !== key) return null;
+    return sortConfig.direction === 'asc' ? '↑' : '↓';
+  };
+
   return (
-    <div className="p-6 bg-white rounded-lg shadow-md">
-      <h1 className="mb-4 text-lg font-bold text-center text-[#1a2850]">Listado de Usuarios</h1>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <label className="mr-2">Registros por página:</label>
-          <select className="p-1 border rounded-md" value={cantidadPorPagina} onChange={handleCantidadChange}>
-            {[2, 4, 8, 14, 20, 50].map((cantidad) => (
-              <option key={cantidad} value={cantidad}>{cantidad}</option>
-            ))}
-          </select>
-        </div>
-        <button
-          className="flex items-center px-4 py-2 text-white bg-blue-500 rounded-md shadow-md hover:bg-blue-600"
-          onClick={() => setShowAddUsuarioModal(true)}
-        >
-          <Plus size={18} className="mr-2" /> Añadir usuario
-        </button>
-      </div>
-      <div className="flex justify-between mb-4">
-        <input
-          type="text"
-          className="px-2 py-1 border rounded-md"
-          placeholder="Buscar por DNI"
-          value={busquedaDni}
-          onChange={(e) => setBusquedaDni(e.target.value)}
-        />
-      </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-collapse border-gray-300">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="px-4 py-2 text-left bg-[#1a2850] text-white border">Nombre</th>
-              <th className="px-4 py-2 text-left bg-[#1a2850] text-white border">Apellido Paterno</th>
-              <th className="px-4 py-2 text-left bg-[#1a2850] text-white border">Apellido Materno</th>
-              <th className="px-4 py-2 text-left bg-[#1a2850] text-white border">DNI</th>
-              <th className="px-4 py-2 text-left bg-[#1a2850] text-white border">Rol</th>
-              <th className="px-4 py-2 text-center bg-[#1a2850] text-white border">Acción</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-3 text-center text-gray-500">Cargando usuarios...</td>
-              </tr>
-            ) : usuariosPorPagina.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-3 text-center text-gray-500">No hay usuarios registrados.</td>
-              </tr>
-            ) : (
-              usuariosPorPagina.map((usuario) => (
-                <tr key={usuario.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 border">{usuario.nombres}</td>
-                  <td className="px-4 py-2 border">{usuario.apellido_paterno || "N/A"}</td>
-                  <td className="px-4 py-2 border">{usuario.apellido_materno || "N/A"}</td>
-                  <td className="px-4 py-2 border">{usuario.dni}</td>
-                  <td className="px-4 py-2 border">{usuario.rol}</td>
-                  <td className="px-4 py-2 text-center border">
-                    <button className="p-1 text-blue-500 hover:text-blue-700"><Eye size={18} /></button>
-                    <button className="p-1 mx-2 text-yellow-500 hover:text-yellow-700"><Edit size={18} /></button>
-                    <button className="p-1 text-red-500 hover:text-red-700"><Trash2 size={18} /></button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-{/* Paginación */}
-<div className="flex items-center justify-center mt-4 space-x-2">
-        <button
-          className="px-4 py-2 text-blue-500 bg-white border rounded-md disabled:opacity-50"
-          onClick={handlePreviousPage}
-          disabled={paginaActual === 1}
-        >
-          Anterior
-        </button>
-
-        {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+    <div className="container px-4 py-8 mx-auto">
+      <div className="p-6 bg-white rounded-lg shadow-md">
+        <h1 className="mb-6 text-2xl font-bold text-gray-800">Gestión de Usuarios</h1>
+        
+        {/* Header with search and add button */}
+        <div className="flex flex-col items-start justify-between gap-4 mb-6 md:flex-row md:items-center">
+          <div className="relative w-full md:w-64">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <Search className="w-5 h-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              className="block w-full py-2 pl-10 pr-3 leading-5 placeholder-gray-500 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="Buscar usuarios..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
+          
           <button
-            key={page}
-            className={`px-4 py-2 rounded-md border ${
-              paginaActual === page ? "bg-blue-500 text-white" : "bg-white text-blue-500"
-            }`}
-            onClick={() => handlePageChange(page)}
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
-            {page}
+            <Plus className="w-4 h-4 mr-2" />
+            Nuevo Usuario
           </button>
-        ))}
+        </div>
 
-        <button
-          className="px-4 py-2 text-blue-500 bg-white border rounded-md disabled:opacity-50"
-          onClick={handleNextPage}
-          disabled={paginaActual === totalPages}
-        >
-          Siguiente
-        </button>
-      </div>
+        {/* Table */}
+        {loading ? (
+          <LoadingSpinner />
+        ) : error ? (
+          <div className="py-8 text-center text-red-500">{error}</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th 
+                    scope="col" 
+                    className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
+                    onClick={() => requestSort('nombres')}
+                  >
+                    Nombre {renderSortIcon('nombres')}
+                  </th>
+                  <th 
+                    scope="col" 
+                    className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
+                    onClick={() => requestSort('apellido_paterno')}
+                  >
+                    Apellido Paterno {renderSortIcon('apellido_paterno')}
+                  </th>
+                  <th 
+                    scope="col" 
+                    className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
+                    onClick={() => requestSort('apellido_materno')}
+                  >
+                    Apellido Materno {renderSortIcon('apellido_materno')}
+                  </th>
+                  <th 
+                    scope="col" 
+                    className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
+                    onClick={() => requestSort('dni')}
+                  >
+                    DNI {renderSortIcon('dni')}
+                  </th>
+                  <th 
+                    scope="col" 
+                    className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
+                    onClick={() => requestSort('rol')}
+                  >
+                    Rol {renderSortIcon('rol')}
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {paginatedUsers.length > 0 ? (
+                  paginatedUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+                        {user.nombres}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                        {user.apellido_paterno || "N/A"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                        {user.apellido_materno || "N/A"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                        {user.dni}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          user.rol === 'admin' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {user.rol}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-right whitespace-nowrap">
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowViewModal(true);
+                          }}
+                          className="mr-4 text-blue-600 hover:text-blue-900"
+                          title="Ver detalles"
+                        >
+                          <Eye className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowEditModal(true);
+                          }}
+                          className="mr-4 text-yellow-600 hover:text-yellow-900"
+                          title="Editar"
+                        >
+                          <Edit className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user);
+                          }}
+                          className="text-red-600 hover:text-red-900"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-4 text-sm text-center text-gray-500">
+                      No se encontraron usuarios
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-      {/* Modal para añadir usuario */}
-      {showAddUsuarioModal && (
-        <AddUsuarioModal
-          showModal={showAddUsuarioModal}
-          handleClose={() => setShowAddUsuarioModal(false)}
-          handleAddUser={handleAddUsuario}
-        />
-      )}
-
-      {/* Modal de confirmación para eliminar */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-30">
-          <div className="p-6 bg-white rounded-lg shadow-lg w-96">
-            <h2 className="text-xl font-semibold text-[#1a2850] mb-4">
-              ¿Estás seguro de eliminar este usuario?
-            </h2>
-            <p className="mb-4 text-gray-600">
-              Esta acción no se puede deshacer. ¿Deseas continuar con la eliminación de{" "}
-              {usuarioAEliminar?.nombres}?
-            </p>
-            <div className="flex justify-end space-x-4">
-              <button
-                className="px-4 py-2 text-white bg-gray-500 rounded-md"
-                onClick={handleCloseModal}
+        {/* Pagination */}
+        {filteredUsers.length > 0 && (
+          <div className="flex flex-col items-center justify-between mt-6 space-y-4 md:flex-row md:space-y-0">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-700">Mostrar</span>
+              <select
+                value={itemsPerPage}
+                onChange={handleItemsPerPageChange}
+                className="block w-20 py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               >
-                No
-              </button>
+                {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+              <span className="text-sm text-gray-700">por página</span>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-700">
+                Mostrando <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> a{' '}
+                <span className="font-medium">
+                  {Math.min(currentPage * itemsPerPage, filteredUsers.length)}
+                </span>{' '}
+                de <span className="font-medium">{filteredUsers.length}</span> usuarios
+              </span>
+            </div>
+            
+            <div className="flex space-x-1">
               <button
-  className="px-4 py-2 text-white bg-red-600 rounded-md"
-  onClick={handleDelete}
->
-  Sí, Eliminar
-</button>
-
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`px-3 py-1 rounded-md ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+              >
+                Anterior
+              </button>
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    className={`px-3 py-1 rounded-md ${currentPage === pageNum ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`px-3 py-1 rounded-md ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+              >
+                Siguiente
+              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
+      {/* Modals */}
+      <AddUsuarioModal
+  showModal={showAddModal}  
+  handleClose={() => setShowAddModal(false)}  
+  handleAddUser={handleAddUser}  
+/>
+
+
+
+      {selectedUser && (
+        <>
+         <EditUsuarioModal
+         isOpen={showEditModal}  
+        onClose={() => setShowEditModal(false)}  
+        userData={selectedUser}  
+         onSave={handleEditUser}  
+          />
+
+
+
+<ViewUsuarioModal
+  isOpen={showViewModal}
+  onClose={() => setShowViewModal(false)}
+  userData={selectedUser}  // Aquí cambiamos "user" por "userData"
+ />
+
+
+<ConfirmationModal
+  isOpen={!!selectedUser}
+  onCancel={() => setSelectedUser(null)} // Cambia "onClose" por "onCancel"
+  onConfirm={handleDeleteUser}
+  title="Confirmar eliminación"
+  message={`¿Estás seguro que deseas eliminar al usuario ${selectedUser?.nombres}? Esta acción no se puede deshacer.`}
+/>
+
+
+
+        </>
+      )}
     </div>
   );
 };
+
 export default Usuarios;
