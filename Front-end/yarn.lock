@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@alloc/quick-lru@^5.2.0":
+  "integrity" "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="
+  "resolved" "https://registry.npmjs.org/@alloc/quick-lru/-/quick-lru-5.2.0.tgz"
+  "version" "5.2.0"
+
 "@ampproject/remapping@^2.2.0":
   "integrity" "sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw=="
   "resolved" "https://registry.npmjs.org/@ampproject/remapping/-/remapping-2.3.0.tgz"
@@ -357,6 +362,18 @@
     "@tailwindcss/oxide-linux-x64-musl" "4.0.15"
     "@tailwindcss/oxide-win32-arm64-msvc" "4.0.15"
     "@tailwindcss/oxide-win32-x64-msvc" "4.0.15"
+
+"@tailwindcss/postcss@^4.0.15":
+  "integrity" "sha512-qyrpoDKIO7wzkRbKCvGLo7gXRjT9/Njf7ZJiJhG4njrfZkvOhjwnaHpYbpxYeDysEg+9pB1R4jcd+vQ7ZUDsmQ=="
+  "resolved" "https://registry.npmjs.org/@tailwindcss/postcss/-/postcss-4.0.15.tgz"
+  "version" "4.0.15"
+  dependencies:
+    "@alloc/quick-lru" "^5.2.0"
+    "@tailwindcss/node" "4.0.15"
+    "@tailwindcss/oxide" "4.0.15"
+    "lightningcss" "1.29.2"
+    "postcss" "^8.4.41"
+    "tailwindcss" "4.0.15"
 
 "@tailwindcss/vite@^4.0.15":
   "integrity" "sha512-JRexava80NijI8cTcLXNM3nQL5A0ptTHI8oJLLe8z1MpNB6p5J4WCdJJP8RoyHu8/eB1JzEdbpH86eGfbuaezQ=="
@@ -1401,7 +1418,7 @@
   "resolved" "https://registry.npmjs.org/postcss-value-parser/-/postcss-value-parser-4.2.0.tgz"
   "version" "4.2.0"
 
-"postcss@^8.1.0", "postcss@^8.5.3":
+"postcss@^8.1.0", "postcss@^8.4.41", "postcss@^8.5.3":
   "integrity" "sha512-dle9A3yYxlBSrt8Fu+IpjGT8SY8hN0mlaA6GY8t0P5PjIOZemULz/E2Bnm/2dcUOena75OTNkHI76uZBNUUq3A=="
   "resolved" "https://registry.npmjs.org/postcss/-/postcss-8.5.3.tgz"
   "version" "8.5.3"

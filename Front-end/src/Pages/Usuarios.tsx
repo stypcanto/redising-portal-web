@@ -25,6 +25,8 @@ const Usuarios = () => {
   const [paginaActual, setPaginaActual] = useState<number>(1);
   const [showAddUsuarioModal, setShowAddUsuarioModal] = useState(false);
   const [busquedaDni, setBusquedaDni] = useState<string>("");
+  const [showModal, setShowModal] = useState(false);
+  const [usuarioAEliminar, setUsuarioAEliminar] = useState<Usuario | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -74,6 +76,63 @@ const Usuarios = () => {
     paginaActual * cantidadPorPagina
   );
 
+  const openModal = (usuario: Usuario) => {
+    setUsuarioAEliminar(usuario);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setUsuarioAEliminar(null);
+  };
+
+  const handleAddUsuario = (nombres: string, apellidoPaterno: string, apellidoMaterno: string, dni: string, rol: string) => {
+    const nuevoUsuario = {
+      id: usuarios.length + 1,
+      nombres,
+      apellido_paterno: apellidoPaterno,
+      apellido_materno: apellidoMaterno,
+      dni,
+      rol
+    };
+    setUsuarios([...usuarios, nuevoUsuario]);
+  };
+
+  
+  const handleDelete = async () => {
+    if (!usuarioAEliminar) return;
+    setLoading(true); // Indicar que está cargando
+    
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      console.error("❌ No hay token en localStorage");
+      setError("No estás autenticado");
+      setLoading(false);
+      return;
+    }
+  
+    try {
+      //const response = await deleteRequest(`/admin/users/${usuarioAEliminar.id}`, token);
+      const response = await deleteRequest(userId, token); 
+      if (response.success) {
+        setUsuarios((prev) => prev.filter((user) => user.id !== usuarioAEliminar.id));
+        handleCloseModal();
+      } else {
+        console.error("❌ Error al eliminar el usuario");
+        setError("Error al eliminar el usuario");
+      }
+    } catch (error) {
+      console.error("❌ Error en la eliminación:", error);
+      setError("Ocurrió un error al intentar eliminar el usuario");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  
+
+
+  
   return (
     <div className="p-6 bg-white rounded-lg shadow-md">
       <h1 className="mb-4 text-lg font-bold text-center text-[#1a2850]">Listado de Usuarios</h1>
@@ -142,6 +201,77 @@ const Usuarios = () => {
           </tbody>
         </table>
       </div>
+
+{/* Paginación */}
+<div className="flex items-center justify-center mt-4 space-x-2">
+        <button
+          className="px-4 py-2 text-blue-500 bg-white border rounded-md disabled:opacity-50"
+          onClick={handlePreviousPage}
+          disabled={paginaActual === 1}
+        >
+          Anterior
+        </button>
+
+        {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+          <button
+            key={page}
+            className={`px-4 py-2 rounded-md border ${
+              paginaActual === page ? "bg-blue-500 text-white" : "bg-white text-blue-500"
+            }`}
+            onClick={() => handlePageChange(page)}
+          >
+            {page}
+          </button>
+        ))}
+
+        <button
+          className="px-4 py-2 text-blue-500 bg-white border rounded-md disabled:opacity-50"
+          onClick={handleNextPage}
+          disabled={paginaActual === totalPages}
+        >
+          Siguiente
+        </button>
+      </div>
+
+      {/* Modal para añadir usuario */}
+      {showAddUsuarioModal && (
+        <AddUsuarioModal
+          showModal={showAddUsuarioModal}
+          handleClose={() => setShowAddUsuarioModal(false)}
+          handleAddUser={handleAddUsuario}
+        />
+      )}
+
+      {/* Modal de confirmación para eliminar */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-30">
+          <div className="p-6 bg-white rounded-lg shadow-lg w-96">
+            <h2 className="text-xl font-semibold text-[#1a2850] mb-4">
+              ¿Estás seguro de eliminar este usuario?
+            </h2>
+            <p className="mb-4 text-gray-600">
+              Esta acción no se puede deshacer. ¿Deseas continuar con la eliminación de{" "}
+              {usuarioAEliminar?.nombres}?
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                className="px-4 py-2 text-white bg-gray-500 rounded-md"
+                onClick={handleCloseModal}
+              >
+                No
+              </button>
+              <button
+  className="px-4 py-2 text-white bg-red-600 rounded-md"
+  onClick={handleDelete}
+>
+  Sí, Eliminar
+</button>
+
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
