@@ -34,33 +34,42 @@ const EditUsuarioModal = ({ isOpen, onClose, userData, onSave }) => {
   ];
 
   const tiposContrato = ["CAS", "728", "Locador"];
-
   const roles = ["Superadmin", "Admin", "Usuario"];
 
-  const especialidadesMedicina = [
-    "Medicina Interna", "Cardiología", "Neumología", "Gastroenterología",
-    "Endocrinología", "Neurología", "Reumatología", "Infectología",
-    "Nefrología", "Hematología", "Geriatría", "Medicina Física y Rehabilitación",
-    "Cirugía General", "Cirugía Cardiovascular", "Cirugía de Cabeza y Cuello",
-    "Cirugía Plástica y Reconstructiva", "Cirugía Pediátrica", "Neurocirugía",
-    "Traumatología y Ortopedia", "Urología", "Cirugía Oncológica",
-    "Ginecología y Obstetricia", "Pediatría", "Neonatología", "Medicina Fetal",
-    "Anestesiología", "Medicina Intensiva", "Medicina de Emergencias y Desastres",
-    "Psiquiatría", "Psiquiatría Infantil y del Adolescente", "Radiología",
-    "Patología Clínica", "Medicina Nuclear", "Anatomía Patológica",
-    "Medicina Familiar y Comunitaria", "Medicina Ocupacional y Medio Ambiente",
-    "Salud Pública", "Epidemiología"
-  ];
-
-  const especialidadesEnfermeria = [
-    "Enfermería Médico-Quirúrgica", "Enfermería en Cuidados Intensivos",
-    "Enfermería en Urgencias y Emergencias", "Enfermería en Salud Materna y Neonatal",
-    "Enfermería Pediátrica", "Enfermería Familiar y Comunitaria",
-    "Enfermería en Salud Pública", "Enfermería en Epidemiología",
-    "Gestión en Enfermería", "Docencia en Enfermería",
-    "Enfermería en Medicina Física y Rehabilitación",
-    "Enfermería en Salud Ocupacional"
-  ];
+  // Especialidades por profesión
+  const especialidades = {
+    Medicina: [
+      "Medicina Interna", "Cardiología", "Neumología", "Gastroenterología",
+      "Endocrinología", "Neurología", "Reumatología", "Infectología",
+      "Nefrología", "Hematología", "Geriatría", "Medicina Física y Rehabilitación",
+      "Cirugía General", "Cirugía Cardiovascular", "Cirugía de Cabeza y Cuello",
+      "Cirugía Plástica y Reconstructiva", "Cirugía Pediátrica", "Neurocirugía",
+      "Traumatología y Ortopedia", "Urología", "Cirugía Oncológica",
+      "Ginecología y Obstetricia", "Pediatría", "Neonatología", "Medicina Fetal",
+      "Anestesiología", "Medicina Intensiva", "Medicina de Emergencias y Desastres",
+      "Psiquiatría", "Psiquiatría Infantil y del Adolescente", "Radiología",
+      "Patología Clínica", "Medicina Nuclear", "Anatomía Patológica",
+      "Medicina Familiar y Comunitaria", "Medicina Ocupacional y Medio Ambiente",
+      "Salud Pública", "Epidemiología"
+    ],
+    Enfermería: [
+      "Enfermería Médico-Quirúrgica", "Enfermería en Cuidados Intensivos",
+      "Enfermería en Urgencias y Emergencias", "Enfermería en Salud Materna y Neonatal",
+      "Enfermería Pediátrica", "Enfermería Familiar y Comunitaria",
+      "Enfermería en Salud Pública", "Enfermería en Epidemiología",
+      "Gestión en Enfermería", "Docencia en Enfermería",
+      "Enfermería en Medicina Física y Rehabilitación",
+      "Enfermería en Salud Ocupacional"
+    ],
+    Ingenieria: [
+      "Ingeniería Industrial", "Ingeniería Eléctrica", "Ingeniería Electrónica",
+      "Ingeniería de Telecomunicaciones", "Ingeniería Biomédica", "Ingeniería de Sistemas",
+      "Ingeniería de Software", "Ingeniería Informática", "Ingeniería de Ciberseguridad",
+      "Ingeniería en Ciencia de Datos", "Ingeniería en Inteligencia Artificial", 
+      "Ingeniería Empresarial"
+    ],
+    Otro: []
+  };
 
   // Inicializar los datos editados cuando cambia userData
   useEffect(() => {
@@ -71,10 +80,16 @@ const EditUsuarioModal = ({ isOpen, onClose, userData, onSave }) => {
   }, [userData]);
 
   const handleChange = (field, value) => {
-    setEditedData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    // Validar teléfono si es el campo
+    if (field === 'telefono') {
+      // Solo permitir números y máximo 9 dígitos
+      if (value && (!/^\d*$/.test(value) || value.length > 9)) {
+        return;
+      }
+    }
+
+    const newData = { ...editedData, [field]: value };
+    setEditedData(newData);
     
     // Resetear error si se modifica el campo
     if (errors[field]) {
@@ -83,9 +98,15 @@ const EditUsuarioModal = ({ isOpen, onClose, userData, onSave }) => {
 
     // Si cambia la profesión, resetear especialidad si no corresponde
     if (field === 'profesion') {
-      if (value !== 'Medicina' && value !== 'Enfermería') {
-        setEditedData(prev => ({ ...prev, especialidad: '' }));
+      if (value !== 'Medicina' && value !== 'Enfermería' && value !== 'Ingenieria') {
+        newData.especialidad = '';
       }
+      setEditedData(newData);
+    }
+
+    // Validar especialidad si es "Otro"
+    if (field === 'especialidad' && editedData.profesion === 'Otro (Especificar)') {
+      validateFields();
     }
   };
 
@@ -94,6 +115,17 @@ const EditUsuarioModal = ({ isOpen, onClose, userData, onSave }) => {
     if (!editedData.dni) newErrors.dni = "DNI es requerido";
     if (!editedData.nombres) newErrors.nombres = "Nombres son requeridos";
     if (!editedData.rol) newErrors.rol = "Rol es requerido";
+    
+    // Validar teléfono
+    if (editedData.telefono && editedData.telefono.length !== 9) {
+      newErrors.telefono = "El teléfono debe tener 9 dígitos";
+    }
+    
+    // Validar especialidad si profesión es "Otro"
+    if (editedData.profesion === 'Otro (Especificar)' && !editedData.especialidad) {
+      newErrors.especialidad = "Debe especificar la especialidad";
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -171,6 +203,14 @@ const EditUsuarioModal = ({ isOpen, onClose, userData, onSave }) => {
     };
 
     return fieldNames[field] || field.replace(/_/g, ' ').replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+  };
+
+  // Función para obtener las especialidades según profesión
+  const getEspecialidades = () => {
+    if (editedData.profesion === 'Medicina') return especialidades.Medicina;
+    if (editedData.profesion === 'Enfermería') return especialidades.Enfermeria;
+    if (editedData.profesion === 'Ingenieria') return especialidades.Ingenieria;
+    return [];
   };
 
   // Agrupación de campos
@@ -260,6 +300,21 @@ const EditUsuarioModal = ({ isOpen, onClose, userData, onSave }) => {
                             readOnly
                             className="w-full p-2 text-gray-800 bg-gray-200 border border-gray-300 rounded-md cursor-not-allowed"
                           />
+                        ) : field === 'telefono' ? (
+                          <>
+                            <input
+                              type="text"
+                              value={editedData[field] || ''}
+                              onChange={(e) => handleChange(field, e.target.value)}
+                              className="w-full p-2 text-gray-800 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              maxLength={9}
+                            />
+                            {errors.telefono && (
+                              <p className="mt-1 text-sm text-red-600">{errors.telefono}</p>
+                            )}
+                          </>
                         ) : field === 'sexo' ? (
                           <select
                             value={editedData[field] || ''}
@@ -290,24 +345,32 @@ const EditUsuarioModal = ({ isOpen, onClose, userData, onSave }) => {
                             ))}
                           </select>
                         ) : field === 'especialidad' ? (
-                          <select
-                            value={editedData[field] || ''}
-                            onChange={(e) => handleChange(field, e.target.value)}
-                            disabled={!['Medicina', 'Enfermería'].includes(editedData.profesion)}
-                            className="w-full p-2 text-gray-800 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                          >
-                            <option value="">Seleccionar especialidad</option>
-                            {editedData.profesion === 'Medicina' && 
-                              especialidadesMedicina.map(especialidad => (
+                          editedData.profesion === 'Otro (Especificar)' ? (
+                            <>
+                              <input
+                                type="text"
+                                value={editedData[field] || ''}
+                                onChange={(e) => handleChange(field, e.target.value)}
+                                className="w-full p-2 text-gray-800 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Especifique la especialidad"
+                              />
+                              {errors.especialidad && (
+                                <p className="mt-1 text-sm text-red-600">{errors.especialidad}</p>
+                              )}
+                            </>
+                          ) : (
+                            <select
+                              value={editedData[field] || ''}
+                              onChange={(e) => handleChange(field, e.target.value)}
+                              disabled={!['Medicina', 'Enfermería', 'Ingenieria'].includes(editedData.profesion)}
+                              className="w-full p-2 text-gray-800 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            >
+                              <option value="">Seleccionar especialidad</option>
+                              {getEspecialidades().map(especialidad => (
                                 <option key={especialidad} value={especialidad}>{especialidad}</option>
-                              ))
-                            }
-                            {editedData.profesion === 'Enfermería' && 
-                              especialidadesEnfermeria.map(especialidad => (
-                                <option key={especialidad} value={especialidad}>{especialidad}</option>
-                              ))
-                            }
-                          </select>
+                              ))}
+                            </select>
+                          )
                         ) : field === 'tipo_contrato' ? (
                           <select
                             value={editedData[field] || ''}
@@ -328,7 +391,7 @@ const EditUsuarioModal = ({ isOpen, onClose, userData, onSave }) => {
                           />
                         )}
                         
-                        {errors[field] && (
+                        {errors[field] && field !== 'telefono' && field !== 'especialidad' && (
                           <p className="mt-1 text-sm text-red-600">{errors[field]}</p>
                         )}
                       </div>
