@@ -90,6 +90,105 @@ app.get("/personal", async (req, res) => {
   }
 });
 
+// Ruta para modificar data del personal
+// Agrega esto en server.js, preferiblemente con las otras rutas
+app.put("/personal/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      dni,
+      nombres,
+      apellido_paterno,
+      apellido_materno,
+      fecha_nacimiento,
+      sexo,
+      correo,
+      telefono,
+      domicilio,
+      profesion,
+      especialidad,
+      colegiatura,
+      tipo_contrato,
+      rol
+    } = req.body;
+
+    // Validación básica
+    if (!dni || !nombres || !rol) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "DNI, nombres y rol son campos requeridos" 
+      });
+    }
+
+    const result = await pool.query(
+      `UPDATE personal_cenate SET
+        dni = $1,
+        nombres = $2,
+        apellido_paterno = $3,
+        apellido_materno = $4,
+        fecha_nacimiento = $5,
+        sexo = $6,
+        correo = $7,
+        telefono = $8,
+        domicilio = $9,
+        profesion = $10,
+        especialidad = $11,
+        colegiatura = $12,
+        tipo_contrato = $13,
+        rol = $14
+      WHERE id = $15
+      RETURNING *`,
+      [
+        dni,
+        nombres,
+        apellido_paterno,
+        apellido_materno,
+        fecha_nacimiento,
+        sexo,
+        correo,
+        telefono,
+        domicilio,
+        profesion,
+        especialidad,
+        colegiatura,
+        tipo_contrato,
+        rol,
+        id
+      ]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Usuario no encontrado" 
+      });
+    }
+
+    const updatedUser = result.rows[0];
+    delete updatedUser.password;
+
+    res.json({ 
+      success: true, 
+      message: "Usuario actualizado correctamente",
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error("❌ Error al actualizar usuario:", error);
+    
+    if (error.code === '23505' && error.constraint === 'personal_cenate_dni_key') {
+      return res.status(400).json({ 
+        success: false, 
+        message: "El DNI ya está registrado" 
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      message: "Error al actualizar usuario" 
+    });
+  }
+});
+
 // Middleware para rutas inexistentes
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Ruta no encontrada 🚫" });
