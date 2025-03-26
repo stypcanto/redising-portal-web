@@ -10,45 +10,24 @@ import LoadingSpinner from "../components/Modal/LoadingSpinner";
 import ConfirmationModal from "../components/Modal/ConfirmationModal";
 
 interface Usuario {
-  // Identificación
   id: number;
   dni: string;
-
-  // Datos personales
   nombres: string;
   apellido_paterno: string;
   apellido_materno: string;
-  fecha_nacimiento?: string | null; // Formato: YYYY-MM-DD
-  sexo?: 'Masculino' | 'Femenino' | 'Otro' | string | null;
-
-  // Información de contacto
+  fecha_nacimiento?: string;
+  sexo?: string;
   correo: string;
-  telefono?: string | null;
-  domicilio?: string | null;
-
-  // Información profesional
-  profesion?: string | null;
-  especialidad?: string | null;
-  colegiatura?: string | null;
-  tipo_contrato?: string | null;
-
-  // Autenticación
-  password?: string | null;
-  rol: 'Superadmin' | 'Admin' | 'Usuario' | string; // Valores posibles según tu DB
-  estado: boolean; // true = activo, false = inactivo
-
-  // Auditoría
-  fecha_registro: string; // Formato timestamp ISO 8601
+  telefono?: string;
+  domicilio?: string;
+  profesion?: string;
+  especialidad?: string;
+  colegiatura?: string;
+  tipo_contrato?: string;
+  rol: string;
+  estado: boolean;
+  fecha_registro: string;
 }
-
-// Versión "segura" para mostrar (excluye campos sensibles)
-type UsuarioSafe = Omit<Usuario, 'id' | 'password' | 'estado'>;
-
-// Función para obtener los datos seguros
-const getUsuarioSafe = (usuario: Usuario): UsuarioSafe => {
-  const { id, password, estado, ...safeData } = usuario;
-  return safeData;
-};
 
 interface ApiResponse {
   success: boolean;
@@ -58,34 +37,39 @@ interface ApiResponse {
   error?: string;
 }
 
-const ITEMS_PER_PAGE_OPTIONS = [2, 5, 10, 20, 50, 100];
+const ITEMS_PER_PAGE_OPTIONS = [5, 10, 20, 50, 100];
 
 const Usuarios = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>("");
-  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [error, setError] = useState("");
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Usuario | null>(null);
   const [totalUsers, setTotalUsers] = useState(0);
-  const [sortConfig, setSortConfig] = useState<{ key: keyof Usuario; direction: 'asc' | 'desc' } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof Usuario;
+    direction: "asc" | "desc";
+  } | null>(null);
 
   // Función para cargar usuarios
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem("token");
       if (!token) {
         setError("No estás autenticado");
         setLoading(false);
         return;
       }
-  
-      const response = await getRequest<ApiResponse>("/admin/users", token);
+
+      const response = await getRequest<ApiResponse>("/personal", token);
+      
       if (response?.success && Array.isArray(response.data)) {
         setUsuarios(response.data);
         setTotalUsers(response.total || response.data.length);
@@ -107,9 +91,8 @@ const Usuarios = () => {
 
   // Manejo de paginación
   const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newItemsPerPage = Number(e.target.value);
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1); // Resetear a la primera página al cambiar items por página
+    setItemsPerPage(Number(e.target.value));
+    setCurrentPage(1);
   };
 
   const handlePageChange = (page: number) => {
@@ -118,9 +101,9 @@ const Usuarios = () => {
 
   // Ordenamiento
   const requestSort = (key: keyof Usuario) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
+    let direction: "asc" | "desc" = "asc";
+    if (sortConfig?.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
     }
     setSortConfig({ key, direction });
   };
@@ -128,25 +111,18 @@ const Usuarios = () => {
   const sortedUsers = [...usuarios];
   if (sortConfig) {
     sortedUsers.sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key]) {
-        return sortConfig.direction === 'asc' ? -1 : 1;
-      }
-      if (a[sortConfig.key] > b[sortConfig.key]) {
-        return sortConfig.direction === 'asc' ? 1 : -1;
-      }
+      if (a[sortConfig.key]! < b[sortConfig.key]!) return sortConfig.direction === "asc" ? -1 : 1;
+      if (a[sortConfig.key]! > b[sortConfig.key]!) return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
   }
 
   // Filtrado y paginación
-  const filteredUsers = searchTerm
-    ? sortedUsers.filter(user =>
-      user.dni.includes(searchTerm) ||
-      user.nombres.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.apellido_paterno && user.apellido_paterno.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (user.apellido_materno && user.apellido_materno.toLowerCase().includes(searchTerm.toLowerCase()))
-    )
-    : sortedUsers;
+  const filteredUsers = sortedUsers.filter((user) =>
+    `${user.nombres} ${user.apellido_paterno} ${user.apellido_materno} ${user.dni} ${user.rol}`
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
+  );
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const paginatedUsers = filteredUsers.slice(
@@ -155,54 +131,52 @@ const Usuarios = () => {
   );
 
   // CRUD Operations
-  const handleAddUser = (newUser: Omit<Usuario, 'id'>) => {
-    const userWithId = { ...newUser, id: Math.max(...usuarios.map(u => u.id), 0) + 1 };
-    setUsuarios([...usuarios, userWithId]);
+  const handleAddUser = (newUser: Usuario) => {
+    setUsuarios([...usuarios, newUser]);
     toast.success("Usuario agregado correctamente");
     setShowAddModal(false);
   };
 
   const handleEditUser = (updatedUser: Usuario) => {
-    setUsuarios(usuarios.map(user =>
-      user.id === updatedUser.id ? updatedUser : user
-    ));
+    setUsuarios(usuarios.map((user) => (user.id === updatedUser.id ? updatedUser : user)));
     toast.success("Usuario actualizado correctamente");
     setShowEditModal(false);
   };
 
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
-
+  
     try {
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem("token");
       if (!token) {
         toast.error("No estás autenticado");
         return;
       }
-
-      const response = await deleteRequest(`/admin/delete-user/${selectedUser.id}`, token);
-
-      if (response.success) {
+  
+      // Usar la función deleteRequest del Api.ts
+      const response = await deleteRequest(`/personal/${selectedUser.id}`, token);
+  
+      if (response?.success) {
         setUsuarios(usuarios.filter(user => user.id !== selectedUser.id));
         toast.success("Usuario eliminado correctamente");
+        setShowDeleteModal(false);
       } else {
-        toast.error(response.message || "Error al eliminar el usuario");
+        throw new Error(response?.message || "Error al eliminar el usuario");
       }
     } catch (error) {
-      toast.error("Error de conexión con el servidor");
-    } finally {
+      console.error("Error al eliminar usuario:", error);
+      toast.error(error.message || "Error de conexión con el servidor");
+      
+      // Cerrar el modal incluso si hay error
       setSelectedUser(null);
       setShowDeleteModal(false);
     }
   };
 
-  // Render helpers
   const renderSortIcon = (key: keyof Usuario) => {
     if (!sortConfig || sortConfig.key !== key) return null;
-    return sortConfig.direction === 'asc' ? '↑' : '↓';
+    return sortConfig.direction === "asc" ? "↑" : "↓";
   };
-
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   return (
     <div className="container px-4 py-8 mx-auto">
@@ -249,39 +223,35 @@ const Usuarios = () => {
                   <th
                     scope="col"
                     className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
-                    onClick={() => requestSort('nombres')}
+                    onClick={() => requestSort("nombres")}
                   >
-                    Nombre {renderSortIcon('nombres')}
+                    Nombre {renderSortIcon("nombres")}
                   </th>
                   <th
                     scope="col"
                     className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
-                    onClick={() => requestSort('apellido_paterno')}
+                    onClick={() => requestSort("apellido_paterno")}
                   >
-                    Apellido Paterno {renderSortIcon('apellido_paterno')}
+                    Apellido Paterno {renderSortIcon("apellido_paterno")}
                   </th>
                   <th
                     scope="col"
                     className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
-                    onClick={() => requestSort('apellido_materno')}
+                    onClick={() => requestSort("dni")}
                   >
-                    Apellido Materno {renderSortIcon('apellido_materno')}
+                    DNI {renderSortIcon("dni")}
                   </th>
                   <th
                     scope="col"
                     className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
-                    onClick={() => requestSort('dni')}
+                    onClick={() => requestSort("rol")}
                   >
-                    DNI {renderSortIcon('dni')}
+                    Rol {renderSortIcon("rol")}
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
-                    onClick={() => requestSort('rol')}
+                    className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase"
                   >
-                    Rol {renderSortIcon('rol')}
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase">
                     Acciones
                   </th>
                 </tr>
@@ -297,24 +267,20 @@ const Usuarios = () => {
                         {user.apellido_paterno || "N/A"}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                        {user.apellido_materno || "N/A"}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                         {user.dni}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.rol === 'admin'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-blue-100 text-blue-800'
-                          }`}>
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            user.rol === "Admin"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
                           {user.rol}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-right whitespace-nowrap">
-
-
-
-                        {/* Botón Eye - Ver detalles */}
                         <button
                           onClick={() => {
                             setSelectedUser(user);
@@ -325,10 +291,6 @@ const Usuarios = () => {
                         >
                           <Eye className="w-5 h-5" />
                         </button>
-
-
-
-                        {/* Botón Edit - Editar usuario */}
                         <button
                           onClick={() => {
                             setSelectedUser(user);
@@ -339,13 +301,10 @@ const Usuarios = () => {
                         >
                           <Edit className="w-5 h-5" />
                         </button>
-
-
-                        {/* Botón Trash - Eliminar usuario */}
                         <button
                           onClick={() => {
                             setSelectedUser(user);
-                            setShowDeleteModal(true); // Mostrar modal de confirmación
+                            setShowDeleteModal(true);
                           }}
                           className="text-red-600 hover:text-red-900"
                           title="Eliminar"
@@ -357,7 +316,7 @@ const Usuarios = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-6 py-4 text-sm text-center text-gray-500">
+                    <td colSpan={5} className="px-6 py-4 text-sm text-center text-gray-500">
                       No se encontraron usuarios
                     </td>
                   </tr>
@@ -388,10 +347,11 @@ const Usuarios = () => {
 
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-700">
-                Mostrando <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> a{' '}
+                Mostrando{" "}
+                <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> a{" "}
                 <span className="font-medium">
                   {Math.min(currentPage * itemsPerPage, filteredUsers.length)}
-                </span>{' '}
+                </span>{" "}
                 de <span className="font-medium">{filteredUsers.length}</span> usuarios
               </span>
             </div>
@@ -400,7 +360,11 @@ const Usuarios = () => {
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className={`px-3 py-1 rounded-md ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                className={`px-3 py-1 rounded-md ${
+                  currentPage === 1
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
               >
                 Anterior
               </button>
@@ -420,7 +384,11 @@ const Usuarios = () => {
                   <button
                     key={pageNum}
                     onClick={() => handlePageChange(pageNum)}
-                    className={`px-3 py-1 rounded-md ${currentPage === pageNum ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                    className={`px-3 py-1 rounded-md ${
+                      currentPage === pageNum
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
                   >
                     {pageNum}
                   </button>
@@ -429,7 +397,11 @@ const Usuarios = () => {
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className={`px-3 py-1 rounded-md ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                className={`px-3 py-1 rounded-md ${
+                  currentPage === totalPages
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
               >
                 Siguiente
               </button>
@@ -445,8 +417,6 @@ const Usuarios = () => {
         handleAddUser={handleAddUser}
       />
 
-
-
       {selectedUser && (
         <>
           <EditUsuarioModal
@@ -456,15 +426,11 @@ const Usuarios = () => {
             onSave={handleEditUser}
           />
 
-
-
           <ViewUsuarioModal
             isOpen={showViewModal}
             onClose={() => setShowViewModal(false)}
             userData={selectedUser}
           />
-
-
 
           <ConfirmationModal
             isOpen={showDeleteModal}
@@ -474,10 +440,8 @@ const Usuarios = () => {
             }}
             onConfirm={handleDeleteUser}
             title="Confirmar eliminación"
-            message={`¿Estás seguro que deseas eliminar al usuario ${selectedUser?.nombres}?`}
+            message={`¿Estás seguro que deseas eliminar al usuario ${selectedUser.nombres}?`}
           />
-
-
         </>
       )}
     </div>

@@ -93,7 +93,7 @@ app.get("/personal", async (req, res) => {
 });
 
 // Ruta para modificar data del personal
-// Agrega esto en server.js, preferiblemente con las otras rutas
+
 app.put("/personal/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -193,11 +193,6 @@ app.put("/personal/:id", async (req, res) => {
 
 
 
-
-
-
-
-//  POST para crear usuarios
 // Ruta POST para crear usuarios - Versión corregida
 app.post("/personal", async (req, res) => {
   const client = await pool.connect(); // Usamos un cliente para la transacción
@@ -314,6 +309,36 @@ app.post("/personal", async (req, res) => {
   }
 });
 
+
+// Ruta para eliminar personal
+app.delete("/personal/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Verificar que el usuario existe
+    const user = await pool.query("SELECT id FROM personal_cenate WHERE id = $1", [id]);
+    if (user.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Usuario no encontrado" 
+      });
+    }
+
+    // Eliminar el usuario
+    await pool.query("DELETE FROM personal_cenate WHERE id = $1", [id]);
+    
+    res.json({ 
+      success: true, 
+      message: "Usuario eliminado correctamente" 
+    });
+  } catch (error) {
+    console.error("❌ Error al eliminar usuario:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error al eliminar usuario" 
+    });
+  }
+});
 
 // Middleware para rutas inexistentes
 app.use((req, res) => {

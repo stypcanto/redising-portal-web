@@ -1,13 +1,14 @@
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError, AxiosResponse } from "axios";
 
 const API_URL =
   (import.meta as ImportMeta & { env: Record<string, string> }).env.VITE_API_URL ??
   "http://localhost:5001";
 
 if (!API_URL) {
-  throw new Error("❌ Error: La variable de entorno VITE_API_URL no está definida.");
+  throw new Error("❌ [CONFIG ERROR] La variable de entorno VITE_API_URL no está definida");
 }
 
+// ==================== INTERFACES Y TIPOS ====================
 interface User {
   id?: number;
   dni: string;
@@ -16,9 +17,10 @@ interface User {
   apellido_materno?: string;
   correo?: string;
   rol: string;
+  [key: string]: any;
 }
 
-interface ApiResponse<T = unknown> {
+interface ApiResponse<T = any> {
   success: boolean;
   message?: string;
   token?: string;
@@ -34,12 +36,6 @@ interface ApiError {
   errors?: Record<string, string[]>;
 }
 
-const api = axios.create({
-  baseURL: API_URL,
-  headers: { "Content-Type": "application/json" },
-});
-
-// Interfaces para tipos de datos
 interface NewUserData {
   dni: string;
   nombres: string;
@@ -66,14 +62,50 @@ interface RegisterUserData {
   rol?: string;
 }
 
-// Función para manejar errores de Axios
+// ==================== CONFIGURACIÓN AXIOS ====================
+const api = axios.create({
+  baseURL: API_URL,
+  headers: { 
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+  },
+  timeout: 10000, // 10 segundos de timeout
+});
+
+// Interceptor para añadir token a las solicitudes
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem("token");
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, error => {
+  return Promise.reject(error);
+});
+
+// Interceptor para manejar respuestas
+api.interceptors.response.use(
+  (response: AxiosResponse) => response,
+  (error: AxiosError) => {
+    if (error.response?.status === 401) {
+      console.error("🔐 [AUTH ERROR] Token inválido o expirado");
+      // Opcional: Aquí podrías implementar lógica para refrescar el token
+      localStorage.removeItem("token");
+      window.location.href = "/login"; // Redirigir a login
+    }
+    return Promise.reject(error);
+  }
+);
+
+// ==================== FUNCIONES DE MANEJO DE ERRORES ====================
 const handleAxiosError = (error: unknown): ApiResponse => {
   if (axios.isAxiosError(error)) {
-    const errorData = error.response?.data as ApiError;
     const status = error.response?.status ?? 500;
-    const errorMessage = errorData?.message || error.message || "Error desconocido";
+    const errorData = error.response?.data as ApiError;
+    const errorMessage = errorData?.message || error.message || "Error desconocido en la API";
 
-    console.error(`❌ [API ERROR] ${status}: ${errorMessage}`);
+    console.error(`❌ [API ERROR ${status}] ${errorMessage}`);
+    if (error.response?.data) console.error("Detalles:", error.response.data);
 
     return { 
       success: false, 
@@ -84,22 +116,28 @@ const handleAxiosError = (error: unknown): ApiResponse => {
   }
 
   if (error instanceof Error) {
+    console.error("❌ [CLIENT ERROR]", error.message);
     return { 
       success: false, 
       message: error.message 
     };
   }
 
+  console.error("❌ [UNKNOWN ERROR]", error);
   return { 
     success: false, 
     message: "Error desconocido" 
   };
 };
 
-// Función para solicitudes GET
-export const getRequest = async <T>(url: string, token?: string): Promise<T> => {
+// ==================== FUNCIONES PRINCIPALES ====================
+export const getRequest = async <T = any>(
+  url: string, 
+  token?: string
+): Promise<ApiResponse<T>> => {
   try {
-    const response = await api.get<T>(url, {
+    console.log(`📡 GET ${url}`);
+    const response = await api.get<ApiResponse<T>>(url, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     return response.data;
@@ -108,14 +146,14 @@ export const getRequest = async <T>(url: string, token?: string): Promise<T> => 
   }
 };
 
-// Función para solicitudes POST
-export const postRequest = async <T>(
+export const postRequest = async <T = any>(
   url: string, 
   data: object,
   token?: string
-): Promise<T> => {
+): Promise<ApiResponse<T>> => {
   try {
-    const response = await api.post<T>(url, data, {
+    console.log(`📤 POST ${url}`, data);
+    const response = await api.post<ApiResponse<T>>(url, data, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     return response.data;
@@ -124,14 +162,14 @@ export const postRequest = async <T>(
   }
 };
 
-// Función para solicitudes PUT
-export const putRequest = async <T>(
+export const putRequest = async <T = any>(
   url: string, 
   data: Record<string, unknown>, 
   token?: string
-): Promise<T> => {
+): Promise<ApiResponse<T>> => {
   try {
-    const response = await api.put<T>(url, data, {
+    console.log(`🔄 PUT ${url}`, data);
+    const response = await api.put<ApiResponse<T>>(url, data, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     return response.data;
@@ -140,120 +178,102 @@ export const putRequest = async <T>(
   }
 };
 
-// Función para solicitudes DELETE
 export const deleteRequest = async <T = any>(
-  endpoint: string,
+  url: string,
   token: string
-): Promise<T> => {
+): Promise<ApiResponse<T>> => {
   try {
-    const response = await axios.delete<T>(`${API_URL}${endpoint}`, {
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+    console.log(`🗑️ DELETE ${url}`);
+    const response = await api.delete<ApiResponse<T>>(url, {
+      headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
   } catch (error) {
-    throw handleAxiosError(error);
+    console.error("❌ Error en DELETE request:", error);
+    return handleAxiosError(error);
   }
 };
 
-// Registro de usuario
-export const registerUser = async (userData: RegisterUserData): Promise<ApiResponse> => {
+// ==================== FUNCIONES ESPECÍFICAS ====================
+export const registerUser = async (
+  userData: RegisterUserData
+): Promise<ApiResponse<User>> => {
   try {
-    const response = await api.post<ApiResponse>("/auth/register", userData);
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      const errorData = error.response?.data as ApiError;
-      return {
-        success: false,
-        message: errorData?.message || error.message || "Error en el registro",
-        errors: errorData?.errors
-      };
-    }
-    
-    if (error instanceof Error) {
-      return {
-        success: false,
-        message: error.message
-      };
-    }
-
-    return {
-      success: false,
-      message: "Error de conexión con el servidor"
-    };
-  }
-};
-
-// Inicio de sesión
-export const loginUser = async (dni: string, password: string): Promise<ApiResponse> => {
-  try {
-    console.log("🔹 Intentando login con:", dni, password);
-    const response = await postRequest<ApiResponse>("/auth/login", { dni, password });
+    console.log("👤 Registrando nuevo usuario:", userData);
+    const response = await postRequest<User>("/auth/register", userData);
     
     if (response.success && response.token) {
       localStorage.setItem("token", response.token);
-      console.log("✅ Token guardado en localStorage.");
-      return response;
+      console.log("🔑 Token de registro guardado");
     }
     
-    return {
-      success: false,
-      message: response.message || "Credenciales incorrectas"
-    };
+    return response;
   } catch (error) {
     return handleAxiosError(error);
   }
 };
 
-// Obtener perfil del usuario
-export const getProfile = async (): Promise<ApiResponse> => {
-  const token = localStorage.getItem("token");
-
-  if (!token) {
-    console.error("❌ No hay token en localStorage");
-    return { success: false, message: "No hay token disponible" };
+export const loginUser = async (
+  dni: string, 
+  password: string
+): Promise<ApiResponse<User>> => {
+  try {
+    console.log("🔐 Intentando inicio de sesión para DNI:", dni);
+    const response = await postRequest<User>("/auth/login", { dni, password });
+    
+    if (response.success && response.token) {
+      localStorage.setItem("token", response.token);
+      console.log("✅ Inicio de sesión exitoso. Token guardado");
+    }
+    
+    return response;
+  } catch (error) {
+    return handleAxiosError(error);
   }
-
-  return await getRequest<ApiResponse>("/user/portaladmin", token);
 };
 
-// Crear un usuario nuevo
-export const createUser = async (userData: NewUserData): Promise<ApiResponse> => {
-  const token = localStorage.getItem("token");
-  
-  if (!token) {
-    console.error("❌ No hay token de autenticación");
-    return { success: false, message: "No autorizado" };
-  }
-
+export const getProfile = async (): Promise<ApiResponse<User>> => {
   try {
-    console.log("📤 Enviando datos de usuario:", userData);
-    const response = await api.post<ApiResponse>("/personal", {
+    console.log("👤 Obteniendo perfil de usuario");
+    return await getRequest<User>("/user/portaladmin");
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+};
+
+export const createUser = async (
+  userData: NewUserData
+): Promise<ApiResponse<User>> => {
+  try {
+    console.log("➕ Creando nuevo usuario:", userData);
+    const response = await postRequest<User>("/personal", {
       ...userData,
       password: "12345678", // Contraseña por defecto
       debe_cambiar_password: true
-    }, {
-      headers: { 
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
     });
-
-    console.log("📥 Respuesta del servidor:", response.data);
-    return response.data;
+    
+    console.log("📝 Respuesta de creación de usuario:", response);
+    return response;
   } catch (error) {
-    console.error("❌ Error al crear usuario:", error);
-    if (axios.isAxiosError(error)) {
-      const errorData = error.response?.data as ApiError;
-      return {
-        success: false,
-        message: errorData?.message || error.message || "Error al crear usuario",
-        errors: errorData?.errors
-      };
-    }
-    return { success: false, message: "Error desconocido al crear usuario" };
+    console.error("❌ Error en creación de usuario:", error);
+    return handleAxiosError(error);
   }
+};
+
+// ==================== FUNCIONES ADICIONALES ====================
+export const validateToken = (): boolean => {
+  const token = localStorage.getItem("token");
+  if (!token) return false;
+  
+  try {
+    // Aquí podrías implementar una verificación más completa del token
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const logout = (): void => {
+  localStorage.removeItem("token");
+  console.log("👋 Sesión cerrada. Token removido");
 };

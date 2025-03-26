@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
+
+// Definir la URL base de la API
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 const EditUsuarioModal = ({ isOpen, onClose, userData, onSave }) => {
   const [editedData, setEditedData] = useState({});
@@ -6,38 +10,23 @@ const EditUsuarioModal = ({ isOpen, onClose, userData, onSave }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
 
-  // Listas desplegables
-  const profesiones = [
-    "Ingenieria",
-    "Administración",
-    "Derecho",
-    "Administración en Salud",
-    "Comunicador",
-    "Tec. Informática",
-    "Medicina",
-    "Odontología",
-    "Medicina Veterinaria",
-    "Enfermería",
-    "Técnico en Enfermería",
-    "Terapia Física y Rehabilitación",
-    "Terapia Ocupacional",
-    "Terapia del Lenguaje",
-    "Nutrición y Dietética",
-    "Psicología",
-    "Tecnología Médica en Terapia Física y Rehabilitación",
-    "Tecnología Médica en Radiología",
-    "Tecnología Médica en Optometría",
-    "Tecnología Médica en Audiología",
-    "Tecnología Médica en Laboratorio Clínico y Anatomía Patológica",
-    "Obstetricia",
-    "Otro (Especificar)"
+  // Listas desplegables organizadas como constantes fuera del componente
+  const PROFESIONES = [
+    "Ingenieria", "Administración", "Derecho", "Administración en Salud",
+    "Comunicador", "Tec. Informática", "Medicina", "Odontología",
+    "Medicina Veterinaria", "Enfermería", "Técnico en Enfermería",
+    "Terapia Física y Rehabilitación", "Terapia Ocupacional", "Terapia del Lenguaje",
+    "Nutrición y Dietética", "Psicología", "Tecnología Médica en Terapia Física y Rehabilitación",
+    "Tecnología Médica en Radiología", "Tecnología Médica en Optometría",
+    "Tecnología Médica en Audiología", "Tecnología Médica en Laboratorio Clínico y Anatomía Patológica",
+    "Obstetricia", "Otro (Especificar)"
   ];
 
-  const tiposContrato = ["CAS", "728", "Locador"];
-  const roles = ["Superadmin", "Admin", "Usuario"];
+  const TIPOS_CONTRATO = ["CAS", "728", "Locador"];
+  const ROLES = ["Superadmin", "Admin", "Usuario"];
 
-  // Especialidades por profesión
-  const especialidades = {
+  // Especialidades por profesión como objeto constante
+  const ESPECIALIDADES = {
     Medicina: [
       "Medicina Interna", "Cardiología", "Neumología", "Gastroenterología",
       "Endocrinología", "Neurología", "Reumatología", "Infectología",
@@ -71,150 +60,8 @@ const EditUsuarioModal = ({ isOpen, onClose, userData, onSave }) => {
     Otro: []
   };
 
-  // Inicializar los datos editados cuando cambia userData
-  useEffect(() => {
-    if (userData) {
-      setEditedData({ ...userData });
-      setErrors({});
-    }
-  }, [userData]);
-
-  const handleChange = (field, value) => {
-    // Validar teléfono si es el campo
-    if (field === 'telefono') {
-      // Solo permitir números y máximo 9 dígitos
-      if (value && (!/^\d*$/.test(value) || value.length > 9)) {
-        return;
-      }
-    }
-
-    const newData = { ...editedData, [field]: value };
-    setEditedData(newData);
-    
-    // Resetear error si se modifica el campo
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
-    }
-
-    // Si cambia la profesión, resetear especialidad si no corresponde
-    if (field === 'profesion') {
-      if (value !== 'Medicina' && value !== 'Enfermería' && value !== 'Ingenieria') {
-        newData.especialidad = '';
-      }
-      setEditedData(newData);
-    }
-
-    // Validar especialidad si es "Otro"
-    if (field === 'especialidad' && editedData.profesion === 'Otro (Especificar)') {
-      validateFields();
-    }
-  };
-
-  const validateFields = () => {
-    const newErrors = {};
-    if (!editedData.dni) newErrors.dni = "DNI es requerido";
-    if (!editedData.nombres) newErrors.nombres = "Nombres son requeridos";
-    if (!editedData.rol) newErrors.rol = "Rol es requerido";
-    
-    // Validar teléfono
-    if (editedData.telefono && editedData.telefono.length !== 9) {
-      newErrors.telefono = "El teléfono debe tener 9 dígitos";
-    }
-    
-    // Validar especialidad si profesión es "Otro"
-    if (editedData.profesion === 'Otro (Especificar)' && !editedData.especialidad) {
-      newErrors.especialidad = "Debe especificar la especialidad";
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSave = async () => {
-    if (!validateFields()) return;
-    setIsSaving(true);
-
-    try {
-      const dataToSend = {
-        ...editedData,
-        fecha_nacimiento: editedData.fecha_nacimiento || null
-      };
-
-      const response = await fetch(`http://localhost:5001/personal/${editedData.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(dataToSend)
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setNotification({ 
-          show: true, 
-          message: 'Usuario actualizado correctamente', 
-          type: 'success' 
-        });
-        setTimeout(() => {
-          onSave(data.user);
-          onClose();
-        }, 1500);
-      } else {
-        setNotification({ 
-          show: true, 
-          message: data.message || "Error al actualizar usuario", 
-          type: 'error' 
-        });
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      setNotification({ 
-        show: true, 
-        message: "Error al conectar con el servidor", 
-        type: 'error' 
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Campos excluidos de la edición
-  const excludedFields = ['id', 'fecha_registro', 'estado'];
-
-  // Formatear nombres de campos
-  const formatFieldName = (field) => {
-    const fieldNames = {
-      dni: 'DNI',
-      nombres: 'Nombres Completos',
-      apellido_paterno: 'Apellido Paterno',
-      apellido_materno: 'Apellido Materno',
-      fecha_nacimiento: 'Fecha de Nacimiento',
-      sexo: 'Género',
-      correo: 'Correo Electrónico',
-      telefono: 'Teléfono',
-      domicilio: 'Dirección',
-      profesion: 'Profesión',
-      especialidad: 'Especialidad',
-      colegiatura: 'N° Colegiatura',
-      tipo_contrato: 'Tipo de Contrato',
-      rol: 'Rol en el Sistema'
-    };
-
-    return fieldNames[field] || field.replace(/_/g, ' ').replace(/(^\w|\s\w)/g, m => m.toUpperCase());
-  };
-
-  // Función para obtener las especialidades según profesión
-  const getEspecialidades = () => {
-    if (editedData.profesion === 'Medicina') return especialidades.Medicina;
-    if (editedData.profesion === 'Enfermería') return especialidades.Enfermeria;
-    if (editedData.profesion === 'Ingenieria') return especialidades.Ingenieria;
-    return [];
-  };
-
-  // Agrupación de campos
-  const fieldGroups = [
+  // Campos agrupados para mejor organización
+  const FIELD_GROUPS = [
     {
       title: 'Información Personal',
       icon: '👤',
@@ -237,10 +84,173 @@ const EditUsuarioModal = ({ isOpen, onClose, userData, onSave }) => {
     }
   ];
 
+  // Campos excluidos de la edición
+  const EXCLUDED_FIELDS = ['id', 'fecha_registro', 'estado'];
+
+  // Mapeo de nombres de campos para mostrar
+  const FIELD_NAMES = {
+    dni: 'DNI',
+    nombres: 'Nombres Completos',
+    apellido_paterno: 'Apellido Paterno',
+    apellido_materno: 'Apellido Materno',
+    fecha_nacimiento: 'Fecha de Nacimiento',
+    sexo: 'Género',
+    correo: 'Correo Electrónico',
+    telefono: 'Teléfono',
+    domicilio: 'Dirección',
+    profesion: 'Profesión',
+    especialidad: 'Especialidad',
+    colegiatura: 'N° Colegiatura',
+    tipo_contrato: 'Tipo de Contrato',
+    rol: 'Rol en el Sistema'
+  };
+
+  // Inicializar los datos editados cuando cambia userData
+  useEffect(() => {
+    if (userData) {
+      setEditedData({ ...userData });
+      setErrors({});
+    }
+  }, [userData]);
+
+  // Manejar cambios en los campos del formulario
+  const handleChange = (field, value) => {
+    // Validar teléfono si es el campo
+    if (field === 'telefono') {
+      if (value && (!/^\d*$/.test(value) || value.length > 9)) {
+        return;
+      }
+    }
+
+    const newData = { ...editedData, [field]: value };
+    
+    // Resetear error si se modifica el campo
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+
+    // Si cambia la profesión, resetear especialidad si no corresponde
+    if (field === 'profesion') {
+      if (value !== 'Medicina' && value !== 'Enfermería' && value !== 'Ingenieria') {
+        newData.especialidad = '';
+      }
+    }
+
+    setEditedData(newData);
+  };
+
+  // Validar campos del formulario
+  const validateFields = () => {
+    const newErrors = {};
+    
+    // Validaciones básicas
+    if (!editedData.dni) newErrors.dni = "DNI es requerido";
+    if (!editedData.nombres) newErrors.nombres = "Nombres son requeridos";
+    if (!editedData.rol) newErrors.rol = "Rol es requerido";
+    
+    // Validar teléfono
+    if (editedData.telefono && editedData.telefono.length !== 9) {
+      newErrors.telefono = "El teléfono debe tener 9 dígitos";
+    }
+    
+    // Validar especialidad si profesión es "Otro"
+    if (editedData.profesion === 'Otro (Especificar)' && !editedData.especialidad) {
+      newErrors.especialidad = "Debe especificar la especialidad";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Función para guardar los cambios
+  const handleSave = async () => {
+    if (!validateFields()) return;
+    setIsSaving(true);
+    
+    try {
+      // Preparar los datos para enviar
+      const dataToSend = {
+        dni: editedData.dni,
+        nombres: editedData.nombres,
+        apellido_paterno: editedData.apellido_paterno,
+        apellido_materno: editedData.apellido_materno,
+        fecha_nacimiento: editedData.fecha_nacimiento || null,
+        sexo: editedData.sexo || null,
+        correo: editedData.correo,
+        telefono: editedData.telefono || null,
+        domicilio: editedData.domicilio || null,
+        profesion: editedData.profesion || null,
+        especialidad: editedData.especialidad || null,
+        colegiatura: editedData.colegiatura || null,
+        tipo_contrato: editedData.tipo_contrato || null,
+        rol: editedData.rol
+      };
+
+      if (!editedData.id) {
+        throw new Error("ID de usuario no válido");
+      }
+
+      // Usar axios para la solicitud PUT
+      const response = await axios.put(`${API_URL}/personal/${editedData.id}`, dataToSend, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.data.success) {
+        setNotification({ 
+          show: true, 
+          message: 'Usuario actualizado correctamente', 
+          type: 'success' 
+        });
+        setTimeout(() => {
+          onSave(response.data.user || response.data.data);
+          onClose();
+        }, 1500);
+      } else {
+        throw new Error(response.data.message || "Error al actualizar usuario");
+      }
+    } catch (error) {
+      console.error("Error al actualizar usuario:", error);
+      let errorMessage = error.message || "Error al conectar con el servidor";
+      
+      if (error.response) {
+        // Manejar errores de respuesta HTTP
+        if (error.response.status === 404) {
+          errorMessage = "Usuario no encontrado. Por favor, recarga la lista de usuarios.";
+        } else if (error.response.data?.message) {
+          errorMessage = error.response.data.message;
+        }
+      }
+
+      setNotification({ 
+        show: true, 
+        message: errorMessage, 
+        type: 'error' 
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Función para obtener las especialidades según profesión
+  const getEspecialidades = () => {
+    if (editedData.profesion === 'Medicina') return ESPECIALIDADES.Medicina;
+    if (editedData.profesion === 'Enfermería') return ESPECIALIDADES.Enfermería;
+    if (editedData.profesion === 'Ingenieria') return ESPECIALIDADES.Ingenieria;
+    return [];
+  };
+
+  // Formatear nombres de campos para mostrar
+  const formatFieldName = (field) => {
+    return FIELD_NAMES[field] || field.replace(/_/g, ' ').replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+  };
+
   if (!isOpen) return null;
 
   return (
     <>
+      {/* Notificación */}
       {notification.show && (
         <div className={`fixed top-4 right-4 p-4 rounded-md shadow-lg ${
           notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
@@ -249,6 +259,7 @@ const EditUsuarioModal = ({ isOpen, onClose, userData, onSave }) => {
         </div>
       )}
       
+      {/* Modal */}
       <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
         <div className="relative w-full max-w-4xl overflow-hidden bg-white shadow-2xl rounded-xl">
           {/* Encabezado */}
@@ -272,9 +283,9 @@ const EditUsuarioModal = ({ isOpen, onClose, userData, onSave }) => {
 
           {/* Contenido */}
           <div className="p-6 max-h-[70vh] overflow-y-auto">
-            {fieldGroups.map((group) => {
+            {FIELD_GROUPS.map((group) => {
               const fieldsToShow = group.fields.filter(
-                field => editedData[field] !== undefined && !excludedFields.includes(field)
+                field => editedData[field] !== undefined && !EXCLUDED_FIELDS.includes(field)
               );
 
               if (fieldsToShow.length === 0) return null;
@@ -293,107 +304,8 @@ const EditUsuarioModal = ({ isOpen, onClose, userData, onSave }) => {
                           {formatFieldName(field)}
                         </label>
                         
-                        {field === 'dni' || field === 'rol' ? (
-                          <input
-                            type="text"
-                            value={editedData[field] || ''}
-                            readOnly
-                            className="w-full p-2 text-gray-800 bg-gray-200 border border-gray-300 rounded-md cursor-not-allowed"
-                          />
-                        ) : field === 'telefono' ? (
-                          <>
-                            <input
-                              type="text"
-                              value={editedData[field] || ''}
-                              onChange={(e) => handleChange(field, e.target.value)}
-                              className="w-full p-2 text-gray-800 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              maxLength={9}
-                            />
-                            {errors.telefono && (
-                              <p className="mt-1 text-sm text-red-600">{errors.telefono}</p>
-                            )}
-                          </>
-                        ) : field === 'sexo' ? (
-                          <select
-                            value={editedData[field] || ''}
-                            onChange={(e) => handleChange(field, e.target.value)}
-                            className="w-full p-2 text-gray-800 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                          >
-                            <option value="">Seleccionar</option>
-                            <option value="Masculino">Masculino</option>
-                            <option value="Femenino">Femenino</option>
-                            <option value="Otro">Otro</option>
-                          </select>
-                        ) : field === 'fecha_nacimiento' ? (
-                          <input
-                            type="date"
-                            value={editedData[field] || ''}
-                            onChange={(e) => handleChange(field, e.target.value)}
-                            className="w-full p-2 text-gray-800 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                          />
-                        ) : field === 'profesion' ? (
-                          <select
-                            value={editedData[field] || ''}
-                            onChange={(e) => handleChange(field, e.target.value)}
-                            className="w-full p-2 text-gray-800 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                          >
-                            <option value="">Seleccionar profesión</option>
-                            {profesiones.map(profesion => (
-                              <option key={profesion} value={profesion}>{profesion}</option>
-                            ))}
-                          </select>
-                        ) : field === 'especialidad' ? (
-                          editedData.profesion === 'Otro (Especificar)' ? (
-                            <>
-                              <input
-                                type="text"
-                                value={editedData[field] || ''}
-                                onChange={(e) => handleChange(field, e.target.value)}
-                                className="w-full p-2 text-gray-800 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Especifique la especialidad"
-                              />
-                              {errors.especialidad && (
-                                <p className="mt-1 text-sm text-red-600">{errors.especialidad}</p>
-                              )}
-                            </>
-                          ) : (
-                            <select
-                              value={editedData[field] || ''}
-                              onChange={(e) => handleChange(field, e.target.value)}
-                              disabled={!['Medicina', 'Enfermería', 'Ingenieria'].includes(editedData.profesion)}
-                              className="w-full p-2 text-gray-800 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                            >
-                              <option value="">Seleccionar especialidad</option>
-                              {getEspecialidades().map(especialidad => (
-                                <option key={especialidad} value={especialidad}>{especialidad}</option>
-                              ))}
-                            </select>
-                          )
-                        ) : field === 'tipo_contrato' ? (
-                          <select
-                            value={editedData[field] || ''}
-                            onChange={(e) => handleChange(field, e.target.value)}
-                            className="w-full p-2 text-gray-800 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                          >
-                            <option value="">Seleccionar tipo</option>
-                            {tiposContrato.map(tipo => (
-                              <option key={tipo} value={tipo}>{tipo}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                            type="text"
-                            value={editedData[field] || ''}
-                            onChange={(e) => handleChange(field, e.target.value)}
-                            className="w-full p-2 text-gray-800 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                          />
-                        )}
-                        
-                        {errors[field] && field !== 'telefono' && field !== 'especialidad' && (
-                          <p className="mt-1 text-sm text-red-600">{errors[field]}</p>
-                        )}
+                        {/* Renderizado condicional de cada tipo de campo */}
+                        {renderFieldInput(field)}
                       </div>
                     ))}
                   </div>
@@ -424,6 +336,105 @@ const EditUsuarioModal = ({ isOpen, onClose, userData, onSave }) => {
       </div>
     </>
   );
+
+  // Función para renderizar el input adecuado según el tipo de campo
+  function renderFieldInput(field) {
+    const commonProps = {
+      value: editedData[field] || '',
+      onChange: (e) => handleChange(field, e.target.value),
+      className: "w-full p-2 text-gray-800 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+    };
+
+    switch (field) {
+      case 'dni':
+      case 'rol':
+        return (
+          <input
+            type="text"
+            {...commonProps}
+            readOnly
+            className={`${commonProps.className} bg-gray-200 cursor-not-allowed`}
+          />
+        );
+
+      case 'telefono':
+        return (
+          <>
+            <input
+              type="text"
+              {...commonProps}
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={9}
+            />
+            {errors.telefono && <p className="mt-1 text-sm text-red-600">{errors.telefono}</p>}
+          </>
+        );
+
+      case 'sexo':
+        return (
+          <select {...commonProps}>
+            <option value="">Seleccionar</option>
+            <option value="Masculino">Masculino</option>
+            <option value="Femenino">Femenino</option>
+            <option value="Otro">Otro</option>
+          </select>
+        );
+
+      case 'fecha_nacimiento':
+        return <input type="date" {...commonProps} />;
+
+      case 'profesion':
+        return (
+          <select {...commonProps}>
+            <option value="">Seleccionar profesión</option>
+            {PROFESIONES.map(profesion => (
+              <option key={profesion} value={profesion}>{profesion}</option>
+            ))}
+          </select>
+        );
+
+      case 'especialidad':
+        if (editedData.profesion === 'Otro (Especificar)') {
+          return (
+            <>
+              <input
+                type="text"
+                {...commonProps}
+                placeholder="Especifique la especialidad"
+              />
+              {errors.especialidad && <p className="mt-1 text-sm text-red-600">{errors.especialidad}</p>}
+            </>
+          );
+        } else {
+          return (
+            <select
+              {...commonProps}
+              disabled={!['Medicina', 'Enfermería', 'Ingenieria'].includes(editedData.profesion)}
+              className={`${commonProps.className} ${!['Medicina', 'Enfermería', 'Ingenieria'].includes(editedData.profesion) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+            >
+              <option value="">Seleccionar especialidad</option>
+              {getEspecialidades().map(especialidad => (
+                <option key={especialidad} value={especialidad}>{especialidad}</option>
+              ))}
+            </select>
+          );
+        }
+
+      case 'tipo_contrato':
+        return (
+          <select {...commonProps}>
+            <option value="">Seleccionar tipo</option>
+            {TIPOS_CONTRATO.map(tipo => (
+              <option key={tipo} value={tipo}>{tipo}</option>
+            ))}
+          </select>
+        );
+
+      default:
+        return <input type="text" {...commonProps} />;
+    }
+  }
 };
 
 export default EditUsuarioModal;
