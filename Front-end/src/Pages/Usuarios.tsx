@@ -60,26 +60,48 @@ const Usuarios = () => {
   // Función para cargar usuarios
   const fetchUsers = useCallback(async () => {
     setLoading(true);
+    setError("");
     try {
-      const token = localStorage.getItem("token");
+      // 1. Obtener token de forma consistente
+      const token = localStorage.getItem("token"); // Cambiado a "token" para ser consistente con el resto del código
       if (!token) {
-        setError("No estás autenticado");
-        setLoading(false);
-        return;
+        throw new Error("No hay token de autenticación");
       }
-
-      const response = await getRequest<ApiResponse>("/personal", token);
+  
+      // 2. Hacer la petición con manejo de errores
+      const response = await getRequest<ApiResponse>("/personal", token); // Cambiado a "/personal" que parece ser el endpoint correcto
       
-      if (response?.success && Array.isArray(response.data)) {
-        setUsuarios(response.data);
-        setTotalUsers(response.total || response.data.length);
-      } else {
-        setError(response?.message || "Error al obtener usuarios");
-        toast.error(response?.message || "Error al cargar los usuarios");
+      // 3. Validar respuesta
+      if (!response) {
+        throw new Error("No se recibió respuesta del servidor");
       }
-    } catch (err) {
-      setError("Error al obtener los usuarios");
-      toast.error("Error de conexión con el servidor");
+      
+      if (!response.success) {
+        throw new Error(response.message || "Error al obtener usuarios");
+      }
+  
+      if (!Array.isArray(response.data)) {
+        throw new Error("Formato de datos inválido");
+      }
+  
+      // 4. Actualizar estado correctamente
+      setUsuarios(response.data);
+      
+      // 5. Actualizar total si viene en la respuesta
+      if (response.total !== undefined) {
+        setTotalUsers(response.total);
+      }
+      
+    } catch (err: unknown) {
+      // 6. Mejor manejo de errores con TypeScript
+      let errorMessage = "Error al cargar usuarios";
+      if (err instanceof Error) {
+        errorMessage = err.message;
+        console.error("Error fetching users:", err);
+      }
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

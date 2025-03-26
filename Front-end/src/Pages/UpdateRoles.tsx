@@ -37,24 +37,32 @@ const UpdateRoles = () => {
   // Función para cargar usuarios
   const fetchUsers = useCallback(async () => {
     setLoading(true);
+    setError("");
     try {
       const token = localStorage.getItem("authToken");
       if (!token) {
-        setError("No estás autenticado");
-        setLoading(false);
-        return;
+        throw new Error("No estás autenticado");
       }
-
+  
       const response = await getRequest<ApiResponse>("/admin/users", token);
-      if (response?.success && Array.isArray(response.data)) {
-        setUsers(response.data);
-      } else {
-        setError("Error al obtener usuarios");
-        toast.error("Error al cargar los usuarios");
+      
+      if (!response) {
+        throw new Error("No se recibió respuesta del servidor");
       }
-    } catch (err) {
-      setError("Error al obtener los usuarios");
-      toast.error("Error de conexión con el servidor");
+      
+      if (!response.success) {
+        throw new Error(response.message || "Error al obtener usuarios");
+      }
+  
+      if (!Array.isArray(response.data)) {
+        throw new Error("Formato de datos inválido");
+      }
+  
+      setUsers(response.data);
+    } catch (err: any) {
+      console.error("Error fetching users:", err);
+      setError(err.message || "Error al cargar usuarios");
+      toast.error(err.message || "Error al cargar usuarios");
     } finally {
       setLoading(false);
     }

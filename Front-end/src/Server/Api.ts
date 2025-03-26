@@ -73,15 +73,32 @@ const api = axios.create({
 });
 
 // Interceptor para añadir token a las solicitudes
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem("token");
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        const refreshToken = localStorage.getItem('refreshToken');
+        const response = await api.post('/auth/refresh', { refreshToken });
+        
+        localStorage.setItem('token', response.data.token);
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+        
+        return api(originalRequest);
+      } catch (e) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        window.location.href = '/login';
+      }
+    }
+    
+    return Promise.reject(error);
   }
-  return config;
-}, error => {
-  return Promise.reject(error);
-});
+);
 
 // Interceptor para manejar respuestas
 api.interceptors.response.use(
@@ -169,6 +186,8 @@ export const putRequest = async <T = any>(
 ): Promise<ApiResponse<T>> => {
   try {
     console.log(`🔄 PUT ${url}`, data);
+    console.log('Current token:', localStorage.getItem('token')); // ← Agrega esto
+    
     const response = await api.put<ApiResponse<T>>(url, data, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
