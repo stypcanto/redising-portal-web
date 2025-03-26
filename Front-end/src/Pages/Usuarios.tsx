@@ -37,13 +37,13 @@ interface ApiResponse {
   error?: string;
 }
 
-const ITEMS_PER_PAGE_OPTIONS = [5, 10, 20, 50, 100];
+const ITEMS_PER_PAGE_OPTIONS = [3, 5, 10, 20, 50, 100];
 
 const Usuarios = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(3);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -434,10 +434,10 @@ const Usuarios = () => {
 
       {/* Modals */}
       <AddUsuarioModal
-        showModal={showAddModal}
-        handleClose={() => setShowAddModal(false)}
-        handleAddUser={handleAddUser}
-      />
+  showModal={showAddModal}
+  handleClose={() => setShowAddModal(false)}
+  onUserCreated={handleAddUser}  // <<-- Cambiado a onUserCreated
+/>
 
       {selectedUser && (
         <>

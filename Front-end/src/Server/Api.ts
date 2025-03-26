@@ -21,6 +21,7 @@ interface User {
 }
 
 interface ApiResponse<T = any> {
+  [x: string]: any;
   success: boolean;
   message?: string;
   token?: string;
@@ -102,17 +103,45 @@ api.interceptors.response.use(
 
 // Interceptor para manejar respuestas
 api.interceptors.response.use(
-  (response: AxiosResponse) => response,
-  (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      console.error("🔐 [AUTH ERROR] Token inválido o expirado");
-      // Opcional: Aquí podrías implementar lógica para refrescar el token
-      localStorage.removeItem("token");
-      window.location.href = "/login"; // Redirigir a login
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (!refreshToken) {
+          throw new Error("No hay refreshToken disponible");
+        }
+
+        const response = await api.post('/auth/refresh', { refreshToken });
+
+        if (!response.data.token) {
+          throw new Error("No se recibió un nuevo token");
+        }
+
+        localStorage.setItem('token', response.data.token);
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+
+        console.log("🔄 Token refrescado exitosamente");
+
+        // Reintentar la petición original con el nuevo token
+        originalRequest.headers['Authorization'] = `Bearer ${response.data.token}`;
+        return api(originalRequest);
+      } catch (e) {
+        console.error("❌ No se pudo refrescar el token, cerrando sesión...");
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        window.location.href = '/login';
+      }
     }
+
     return Promise.reject(error);
   }
 );
+
 
 // ==================== FUNCIONES DE MANEJO DE ERRORES ====================
 const handleAxiosError = (error: unknown): ApiResponse => {
@@ -185,14 +214,20 @@ export const putRequest = async <T = any>(
   token?: string
 ): Promise<ApiResponse<T>> => {
   try {
-    console.log(`🔄 PUT ${url}`, data);
-    console.log('Current token:', localStorage.getItem('token')); // ← Agrega esto
-    
+    const authToken = token ?? localStorage.getItem('token');
+    console.log('🛠️ Actualizando datos con token:', authToken);
+
+    if (!authToken) {
+      throw new Error("No hay token disponible para actualizar datos");
+    }
+
     const response = await api.put<ApiResponse<T>>(url, data, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: { Authorization: `Bearer ${authToken}` },
     });
+
     return response.data;
   } catch (error) {
+    console.error("❌ Error en PUT request:", error);
     throw handleAxiosError(error);
   }
 };
