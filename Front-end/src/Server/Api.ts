@@ -31,6 +31,24 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+// 📌 Función para crear nuevo usuario (Admin)
+interface NewUserData {
+  dni: string;
+  nombres: string;
+  apellido_paterno: string;
+  apellido_materno: string;
+  correo: string;
+  telefono?: string;
+  fecha_nacimiento?: string;
+  sexo?: string;
+  domicilio?: string;
+  profesion?: string;
+  especialidad?: string;
+  tipo_contrato?: string;
+  rol: string;
+}
+
+
 // Función para manejar errores de Axios
 const handleAxiosError = (error: unknown): ApiResponse => {
   const err = error as AxiosError<{ message?: string }>;
@@ -127,8 +145,29 @@ interface RegisterUserData  {
 }
 
 // 📌 Registro de usuario
-export const registerUser = async (userData: RegisterUserData): Promise<ApiResponse> =>
-  await postRequest<ApiResponse>("/auth/register", userData);
+// En tu Api.ts
+export const registerUser = async (userData: RegisterUserData): Promise<ApiResponse> => {
+  try {
+    const response = await api.post<ApiResponse>("/auth/register", userData);
+    return response.data;
+  } catch (error) {
+    const axiosError = error as AxiosError;
+    console.error("Error detallado:", {
+      status: axiosError.response?.status,
+      data: axiosError.response?.data,
+      config: axiosError.config
+    });
+
+    if (axiosError.response?.data) {
+      return {
+        success: false,
+        message: axiosError.response.data.message || "Error en el registro"
+      };
+    }
+    
+    throw new Error("Error de conexión con el servidor");
+  }
+};
 
 // 📌 Inicio de sesión con almacenamiento del token
 export const loginUser = async (dni: string, password: string): Promise<ApiResponse> => {
@@ -158,4 +197,33 @@ export const getProfile = async (): Promise<ApiResponse> => {
   }
 
   return await getRequest<ApiResponse>("/user/portaladmin", token);
+};
+
+
+// Crear un usuario nuevo
+
+export const createUser = async (userData: NewUserData): Promise<ApiResponse> => {
+  const token = localStorage.getItem("authToken");
+  
+  if (!token) {
+    console.error("❌ No hay token de autenticación");
+    return { success: false, message: "No autorizado" };
+  }
+
+  try {
+    console.log("📤 Enviando datos de usuario:", userData);
+    const response = await api.post<ApiResponse>("/personal", {
+      ...userData,
+      password: "12345678", // Contraseña por defecto
+      debe_cambiar_password: true
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    console.log("📥 Respuesta del servidor:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error al crear usuario:", error);
+    return handleAxiosError(error);
+  }
 };

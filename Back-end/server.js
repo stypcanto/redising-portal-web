@@ -6,9 +6,11 @@ const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const pool = require("./config/db");
-
+const { hashPassword } = require('./utils/authHelpers');
 const app = express();
 const port = process.env.PORT || 5001;
+
+
 
 // Middleware
 app.use(cors());
@@ -188,6 +190,130 @@ app.put("/personal/:id", async (req, res) => {
     });
   }
 });
+
+
+
+
+
+
+
+//  POST para crear usuarios
+// Ruta POST para crear usuarios - Versión corregida
+app.post("/personal", async (req, res) => {
+  const client = await pool.connect(); // Usamos un cliente para la transacción
+  
+  try {
+    await client.query('BEGIN'); // Iniciamos transacción
+
+    const {
+      dni,
+      nombres,
+      apellido_paterno,
+      apellido_materno,
+      correo,
+      telefono,
+      fecha_nacimiento,
+      sexo,
+      domicilio,
+      profesion,
+      especialidad,
+      tipo_contrato,
+      rol = 'Usuario'
+    } = req.body;
+
+    // Validación mejorada
+    const requiredFields = ['dni', 'nombres', 'apellido_paterno', 'correo'];
+    const missingFields = requiredFields.filter(field => !req.body[field]);
+    
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Faltan campos requeridos: ${missingFields.join(', ')}`
+      });
+    }
+
+    if (!/^\d{8}$/.test(dni)) {
+      return res.status(400).json({
+        success: false,
+        message: "El DNI debe tener 8 dígitos numéricos"
+      });
+    }
+
+    // Hash de la contraseña
+    const hashedPassword = await hashPassword("12345678");
+
+    // Verificar si usuario ya existe
+    const userExists = await client.query(
+      'SELECT id FROM personal_cenate WHERE dni = $1 OR correo = $2', 
+      [dni, correo]
+    );
+    
+    if (userExists.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "El DNI o correo ya están registrados"
+      });
+    }
+
+    // Insertar nuevo usuario
+    const result = await client.query(
+      `INSERT INTO personal_cenate (
+        dni, nombres, apellido_paterno, apellido_materno, correo, telefono,
+        fecha_nacimiento, sexo, domicilio, profesion, especialidad,
+        tipo_contrato, rol, password, debe_cambiar_password, estado
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      RETURNING id, dni, nombres, correo, rol`,
+      [
+        dni,
+        nombres,
+        apellido_paterno,
+        apellido_materno,
+        correo,
+        telefono || null,
+        fecha_nacimiento || null,
+        sexo || null,
+        domicilio || null,
+        profesion || null,
+        especialidad || null,
+        tipo_contrato || null,
+        rol,
+        hashedPassword, // Usamos el hash
+        true,
+        true
+      ]
+    );
+
+    await client.query('COMMIT'); // Confirmamos la transacción
+
+    res.status(201).json({
+      success: true,
+      message: "Usuario creado exitosamente",
+      user: result.rows[0],
+      temp_password: "12345678"
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK'); // Revertimos en caso de error
+    console.error("Error al crear usuario:", error);
+
+    // Manejo específico de errores de PostgreSQL
+    if (error.code === '23505') {
+      return res.status(400).json({
+        success: false,
+        message: "El DNI o correo electrónico ya están registrados"
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  } finally {
+    client.release(); // Liberamos el cliente
+  }
+});
+
 
 // Middleware para rutas inexistentes
 app.use((req, res) => {

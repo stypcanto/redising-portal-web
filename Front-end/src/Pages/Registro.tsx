@@ -9,6 +9,7 @@ interface FormData {
   nombres: string;
   apellido_paterno: string;
   apellido_materno: string;
+  telefono: string;  // Añade esto
   correo: string;
   password: string;
   confirmPassword: string;
@@ -30,6 +31,7 @@ const Registro: React.FC = () => {
     apellido_paterno: "",
     apellido_materno: "",
     correo: "",
+    telefono:"",
     password: "",
     confirmPassword: "",
     rol: "Usuario",
@@ -119,15 +121,29 @@ const Registro: React.FC = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage({ text: "", type: "" });
-
+  
     if (!validateForm()) return;
-
+  
     setLoading(true);
     try {
-      // Eliminamos confirmPassword ya que no se envía al backend
       const { confirmPassword, ...dataToSend } = formData;
       
-      const data = await registerUser(dataToSend);
+      // Añade campos requeridos por el backend
+      const completeData = {
+        ...dataToSend,
+        password: formData.password, // Asegúrate que se envía
+        debe_cambiar_password: false,
+        estado: true,
+        fecha_registro: new Date().toISOString(),
+        tipo_contrato: "N/A",
+        profesion: "N/A",
+        rol: "Usuario", // Fuerza el rol por defecto
+        telefono: formData.telefono || "000000000" // Valor por defecto si es necesario
+      };
+  
+      console.log("Datos completos a enviar:", completeData);
+  
+      const data = await registerUser(completeData);
       
       if (data.success) {
         setMessage({ 
@@ -137,13 +153,14 @@ const Registro: React.FC = () => {
         setTimeout(() => navigate("/login"), 2500);
       } else {
         setMessage({ 
-          text: data.message || "Error al registrar el usuario", 
+          text: data.message || "Error en el registro. Por favor verifica tus datos.", 
           type: "error" 
         });
       }
     } catch (err) {
+      console.error("Error completo:", err.response?.data || err.message);
       setMessage({ 
-        text: "Error en el servidor. Por favor intente nuevamente.", 
+        text: err.response?.data?.message || "Error interno del servidor. Contacta al administrador.", 
         type: "error" 
       });
     } finally {
