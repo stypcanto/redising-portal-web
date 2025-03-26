@@ -24,6 +24,14 @@ interface ApiResponse<T = unknown> {
   token?: string;
   user?: User;
   data?: T;
+  status?: number;
+  errors?: Record<string, string[]>;
+}
+
+interface ApiError {
+  message?: string;
+  status?: number;
+  errors?: Record<string, string[]>;
 }
 
 const api = axios.create({
@@ -31,7 +39,7 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// 📌 Función para crear nuevo usuario (Admin)
+// Interfaces para tipos de datos
 interface NewUserData {
   dni: string;
   nombres: string;
@@ -48,28 +56,47 @@ interface NewUserData {
   rol: string;
 }
 
+interface RegisterUserData {
+  dni: string;
+  nombres: string;
+  apellido_paterno: string;
+  apellido_materno: string;
+  correo: string;
+  password: string;
+  rol?: string;
+}
 
 // Función para manejar errores de Axios
 const handleAxiosError = (error: unknown): ApiResponse => {
-  const err = error as AxiosError<{ message?: string }>;
-  const status = err.response?.status ?? 500;
+  if (axios.isAxiosError(error)) {
+    const errorData = error.response?.data as ApiError;
+    const status = error.response?.status ?? 500;
+    const errorMessage = errorData?.message || error.message || "Error desconocido";
 
-  let errorMessage = "Error desconocido";
+    console.error(`❌ [API ERROR] ${status}: ${errorMessage}`);
 
-  if (err.response?.data?.message) {
-    errorMessage = err.response.data.message;
-  } else if (err.message) {
-    errorMessage = err.message;
-  } else if (err.request) {
-    errorMessage = "No se recibió respuesta del servidor.";
+    return { 
+      success: false, 
+      message: errorMessage,
+      status: status,
+      errors: errorData?.errors
+    };
   }
 
-  console.error(`❌ [API ERROR] ${status}: ${errorMessage}`);
+  if (error instanceof Error) {
+    return { 
+      success: false, 
+      message: error.message 
+    };
+  }
 
-  return { success: false, message: errorMessage };
+  return { 
+    success: false, 
+    message: "Error desconocido" 
+  };
 };
 
-// 📌 Función para solicitudes GET
+// Función para solicitudes GET
 export const getRequest = async <T>(url: string, token?: string): Promise<T> => {
   try {
     const response = await api.get<T>(url, {
@@ -81,10 +108,10 @@ export const getRequest = async <T>(url: string, token?: string): Promise<T> => 
   }
 };
 
-// 📌 Función para solicitudes POST
+// Función para solicitudes POST
 export const postRequest = async <T>(
   url: string, 
-  data: object, // Cambiado de Record<string, unknown>
+  data: object,
   token?: string
 ): Promise<T> => {
   try {
@@ -97,7 +124,7 @@ export const postRequest = async <T>(
   }
 };
 
-// 📌 Función para solicitudes PUT
+// Función para solicitudes PUT
 export const putRequest = async <T>(
   url: string, 
   data: Record<string, unknown>, 
@@ -113,9 +140,7 @@ export const putRequest = async <T>(
   }
 };
 
-// 📌 Función para solicitudes DELETE
-// En tu archivo ../Server/Api.ts
-// 📌 Función para solicitudes DELETE - VERSIÓN CORREGIDA
+// Función para solicitudes DELETE
 export const deleteRequest = async <T = any>(
   endpoint: string,
   token: string
@@ -133,63 +158,59 @@ export const deleteRequest = async <T = any>(
   }
 };
 
-// 📌 Autenticación y perfil
-interface RegisterUserData  {
-  dni: string;
-  nombres: string;
-  apellido_paterno: string;
-  apellido_materno: string;
-  correo: string;
-  password: string;
-  rol?: string; // El rol podría ser opcional
-}
-
-// 📌 Registro de usuario
-// En tu Api.ts
+// Registro de usuario
 export const registerUser = async (userData: RegisterUserData): Promise<ApiResponse> => {
   try {
     const response = await api.post<ApiResponse>("/auth/register", userData);
     return response.data;
   } catch (error) {
-    const axiosError = error as AxiosError;
-    console.error("Error detallado:", {
-      status: axiosError.response?.status,
-      data: axiosError.response?.data,
-      config: axiosError.config
-    });
-
-    if (axiosError.response?.data) {
+    if (axios.isAxiosError(error)) {
+      const errorData = error.response?.data as ApiError;
       return {
         success: false,
-        message: axiosError.response.data.message || "Error en el registro"
+        message: errorData?.message || error.message || "Error en el registro",
+        errors: errorData?.errors
       };
     }
     
-    throw new Error("Error de conexión con el servidor");
+    if (error instanceof Error) {
+      return {
+        success: false,
+        message: error.message
+      };
+    }
+
+    return {
+      success: false,
+      message: "Error de conexión con el servidor"
+    };
   }
 };
 
-// 📌 Inicio de sesión con almacenamiento del token
+// Inicio de sesión
 export const loginUser = async (dni: string, password: string): Promise<ApiResponse> => {
-  console.log("🔹 Intentando login con:", dni, password);
-
-  const response = await postRequest<ApiResponse>("/auth/login", { dni, password });
-
-  console.log("📡 Respuesta del backend:", response);
-
-  if (!response.success || !response.token) {
-    console.error("❌ Error de autenticación: Credenciales incorrectas.");
-  } else {
-    localStorage.setItem("authToken", response.token);
-    console.log("✅ Token guardado en localStorage.");
+  try {
+    console.log("🔹 Intentando login con:", dni, password);
+    const response = await postRequest<ApiResponse>("/auth/login", { dni, password });
+    
+    if (response.success && response.token) {
+      localStorage.setItem("token", response.token);
+      console.log("✅ Token guardado en localStorage.");
+      return response;
+    }
+    
+    return {
+      success: false,
+      message: response.message || "Credenciales incorrectas"
+    };
+  } catch (error) {
+    return handleAxiosError(error);
   }
-
-  return response;
 };
 
-// 📌 Obtener perfil del usuario autenticado
+// Obtener perfil del usuario
 export const getProfile = async (): Promise<ApiResponse> => {
-  const token = localStorage.getItem("authToken");
+  const token = localStorage.getItem("token");
 
   if (!token) {
     console.error("❌ No hay token en localStorage");
@@ -199,11 +220,9 @@ export const getProfile = async (): Promise<ApiResponse> => {
   return await getRequest<ApiResponse>("/user/portaladmin", token);
 };
 
-
 // Crear un usuario nuevo
-
 export const createUser = async (userData: NewUserData): Promise<ApiResponse> => {
-  const token = localStorage.getItem("authToken");
+  const token = localStorage.getItem("token");
   
   if (!token) {
     console.error("❌ No hay token de autenticación");
@@ -217,13 +236,24 @@ export const createUser = async (userData: NewUserData): Promise<ApiResponse> =>
       password: "12345678", // Contraseña por defecto
       debe_cambiar_password: true
     }, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
     });
 
     console.log("📥 Respuesta del servidor:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ Error al crear usuario:", error);
-    return handleAxiosError(error);
+    if (axios.isAxiosError(error)) {
+      const errorData = error.response?.data as ApiError;
+      return {
+        success: false,
+        message: errorData?.message || error.message || "Error al crear usuario",
+        errors: errorData?.errors
+      };
+    }
+    return { success: false, message: "Error desconocido al crear usuario" };
   }
 };

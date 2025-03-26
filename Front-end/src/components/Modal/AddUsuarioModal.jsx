@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { createUser } from "../../Server/Api";
 
-
-const AddUsuarioModal = ({ showModal, handleClose, handleAddUser }) => {
+const AddUsuarioModal = ({ showModal, handleClose, onUserCreated }) => {
   // Listas desplegables
   const profesiones = [
     "Ingenieria",
@@ -90,16 +90,33 @@ const AddUsuarioModal = ({ showModal, handleClose, handleAddUser }) => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Función para crear usuario
+  const handleAddUser = async (userData) => {
+    try {
+      const response = await createUser(userData);
+      
+      if (response.success) {
+        toast.success("Usuario creado exitosamente. Contraseña temporal: 12345678");
+        handleClose();
+        onUserCreated && onUserCreated(response.data);
+        return true;
+      } else {
+        throw new Error(response.message || "Error al crear usuario");
+      }
+    } catch (error) {
+      console.error("Error al crear usuario:", error);
+      toast.error(error.message || "Error al conectar con el servidor");
+      return false;
+    }
+  };
+
   const handleInputChange = (field, value) => {
-    // Validar teléfono si es el campo
     if (field === 'telefono') {
-      // Solo permitir números y máximo 9 dígitos
       if (value && (!/^\d*$/.test(value) || value.length > 9)) {
         return;
       }
     }
 
-    // Validar DNI (solo números, máximo 8 dígitos)
     if (field === 'dni') {
       if (value && (!/^\d*$/.test(value) || value.length > 8)) {
         return;
@@ -109,12 +126,10 @@ const AddUsuarioModal = ({ showModal, handleClose, handleAddUser }) => {
     const newData = { ...formData, [field]: value };
     setFormData(newData);
     
-    // Resetear error si se modifica el campo
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
 
-    // Si cambia la profesión, resetear especialidad si no corresponde
     if (field === 'profesion') {
       if (value !== 'Medicina' && value !== 'Enfermería' && value !== 'Ingenieria') {
         newData.especialidad = '';
@@ -122,7 +137,6 @@ const AddUsuarioModal = ({ showModal, handleClose, handleAddUser }) => {
       setFormData(newData);
     }
 
-    // Validar especialidad si es "Otro"
     if (field === 'especialidad' && formData.profesion === 'Otro (Especificar)') {
       validateFields();
     }
@@ -157,7 +171,6 @@ const AddUsuarioModal = ({ showModal, handleClose, handleAddUser }) => {
       newErrors.correo = "Correo electrónico inválido";
     }
 
-    // Validar especialidad si profesión es "Otro"
     if (formData.profesion === 'Otro (Especificar)' && !formData.especialidad) {
       newErrors.especialidad = "Debe especificar la especialidad";
     }
@@ -166,35 +179,27 @@ const AddUsuarioModal = ({ showModal, handleClose, handleAddUser }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  
   const handleSubmit = async () => {
     if (!validateFields()) {
       toast.error("Por favor complete todos los campos requeridos correctamente");
       return;
     }
-  
+
     setIsSubmitting(true);
-  
+
     try {
       const userData = {
         ...formData,
         password: "12345678",
         debe_cambiar_password: true
       };
-  
+
       await handleAddUser(userData);
-      
-      toast.success("Usuario creado exitosamente. Contraseña temporal: 12345678");
-      handleClose();
-    } catch (error) {
-      console.error("Error al crear usuario:", error);
-      toast.error(error.message || "Error al crear usuario");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Función para obtener las especialidades según profesión
   const getEspecialidades = () => {
     if (formData.profesion === 'Medicina') return especialidades.Medicina;
     if (formData.profesion === 'Enfermería') return especialidades.Enfermeria;
@@ -202,7 +207,6 @@ const AddUsuarioModal = ({ showModal, handleClose, handleAddUser }) => {
     return [];
   };
 
-  // Formatear nombres de campos
   const formatFieldName = (field) => {
     const fieldNames = {
       dni: 'DNI',
@@ -224,7 +228,6 @@ const AddUsuarioModal = ({ showModal, handleClose, handleAddUser }) => {
     return fieldNames[field] || field.replace(/_/g, ' ').replace(/(^\w|\s\w)/g, m => m.toUpperCase());
   };
 
-  // Agrupación de campos
   const fieldGroups = [
     {
       title: 'Información Personal',
