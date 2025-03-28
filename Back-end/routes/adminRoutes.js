@@ -9,19 +9,56 @@ const verifySuperadmin = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) {
-      return res.status(401).json({ success: false, message: "No autorizado: Falta el token" });
+      return res.status(401).json({ 
+        success: false, 
+        message: "No autorizado: Falta el token",
+        shouldRefresh: false
+      });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
     if (decoded.rol !== "Superadmin") {
-      return res.status(403).json({ success: false, message: "Acceso denegado: No eres Superadmin" });
+      return res.status(403).json({ 
+        success: false, 
+        message: "Acceso denegado: No eres Superadmin",
+        shouldRefresh: false
+      });
+    }
+
+    // Verificar si el usuario aún existe en la base de datos
+    const userExists = await pool.query(
+      "SELECT id FROM personal_cenate WHERE id = $1 AND dni = $2",
+      [decoded.id, decoded.dni]
+    );
+
+    if (userExists.rows.length === 0) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Usuario no encontrado",
+        shouldLogout: true
+      });
     }
 
     req.user = decoded;
     next();
   } catch (error) {
     console.error("❌ Error en autenticación:", error);
-    res.status(401).json({ success: false, message: "Token inválido o expirado" });
+    
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Token expirado",
+        shouldRefresh: true,
+        expiredAt: error.expiredAt
+      });
+    }
+    
+    return res.status(401).json({ 
+      success: false, 
+      message: "Token inválido",
+      shouldLogout: true
+    });
   }
 };
 

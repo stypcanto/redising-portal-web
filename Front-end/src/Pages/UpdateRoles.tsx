@@ -3,6 +3,7 @@ import { getRequest, putRequest } from "../Server/Api";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import LoadingSpinner from "../components/Modal/LoadingSpinner";
+import { useNavigate } from "react-router-dom";
 
 interface User {
   id: number;
@@ -25,6 +26,7 @@ const ITEMS_PER_PAGE_OPTIONS = [5, 10, 20, 50, 100];
 const ROLE_OPTIONS = ["Usuario", "Administrador", "Superadmin"];
 
 const UpdateRoles = () => {
+  const navigate = useNavigate(); 
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
@@ -34,31 +36,72 @@ const UpdateRoles = () => {
   const [editedRoles, setEditedRoles] = useState<{ [key: number]: string }>({});
   const [sortConfig, setSortConfig] = useState<{ key: keyof User; direction: 'asc' | 'desc' } | null>(null);
 
-  // Función para cargar usuarios
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        setError("No estás autenticado");
-        setLoading(false);
-        return;
-      }
 
-      const response = await getRequest<ApiResponse>("/admin/users", token);
-      if (response?.success && Array.isArray(response.data)) {
-        setUsers(response.data);
-      } else {
-        setError("Error al obtener usuarios");
-        toast.error("Error al cargar los usuarios");
-      }
-    } catch (err) {
-      setError("Error al obtener los usuarios");
-      toast.error("Error de conexión con el servidor");
-    } finally {
+// Agrega esta función para verificar si el token está expirado
+const isTokenExpired = (token: string): boolean => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 < Date.now();
+  } catch (e) {
+    return true;
+  }
+};
+
+
+  // Función para cargar usuarios
+ // Modifica tu fetchUsers para manejar tokens expirados
+ const fetchUsers = useCallback(async () => {
+  setLoading(true);
+  setError("");
+  try {
+    const token = localStorage.getItem("authToken");
+    console.log('Token:', token); // Para depuración
+    
+    if (!token) {
+      setError("No estás autenticado");
+      toast.error("Por favor inicia sesión");
+      navigate('/login');
       setLoading(false);
+      return;
     }
-  }, []);
+
+    // Verificar si el token es válido (no necesariamente expirado)
+    if (token === "null" || token === "undefined" || token.length < 10) {
+      localStorage.removeItem("authToken");
+      setError("Token inválido");
+      toast.error("Sesión inválida, por favor inicia sesión nuevamente");
+      navigate('/login');
+      setLoading(false);
+      return;
+    }
+
+    const response = await getRequest<ApiResponse>("/admin/users", token);
+    
+    if (!response) {
+      throw new Error("No hubo respuesta del servidor");
+    }
+    
+    if (response?.success && Array.isArray(response.data)) {
+      setUsers(response.data);
+    } else {
+      throw new Error(response?.message || "Error al obtener usuarios");
+    }
+  } catch (err: any) {
+    console.error('Error fetching users:', err);
+    
+    if (err?.response?.status === 401 || err.message.includes("autenticación")) {
+      localStorage.removeItem("authToken");
+      setError("Sesión expirada o inválida");
+      toast.error("Por favor inicia sesión nuevamente");
+      navigate('/login');
+    } else {
+      setError(err.message || "Error al cargar los usuarios");
+      toast.error(err.message || "Error de conexión con el servidor");
+    }
+  } finally {
+    setLoading(false);
+  }
+}, [navigate]);
 
   useEffect(() => {
     fetchUsers();

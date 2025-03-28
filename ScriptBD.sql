@@ -84,3 +84,27 @@ SELECT id, dni, nombres, rol FROM personal_cenate
 
 SELECT id, nombres, apellido_paterno, apellido_materno, dni, rol FROM personal_cenate;
 SELECT id, nombres, apellido_paterno, apellido_materno, dni, rol FROM personal_cenate;
+
+ALTER TABLE personal_cenate ADD COLUMN debe_cambiar_password BOOLEAN DEFAULT true;
+
+
+
+SELECT * FROM personal_cenate;
+SELECT dni, password, debe_cambiar_password FROM Personal_CENATE WHERE dni = '44515151';
+
+
+
+-- 1. Cambiar estado a NOT NULL (si mantienes booleano)
+ALTER TABLE personal_cenate ALTER COLUMN estado SET NOT NULL;
+ALTER TABLE personal_cenate ALTER COLUMN estado SET DEFAULT true;
+
+-- 2. Asegurar password (crítico para tu problema actual)
+ALTER TABLE personal_cenate ALTER COLUMN password SET NOT NULL;
+ALTER TABLE personal_cenate ALTER COLUMN password SET DEFAULT '12345678';
+
+-- 3. Agregar restricción única para correo (recomendado)
+ALTER TABLE personal_cenate ADD CONSTRAINT unique_correo UNIQUE (correo);
+
+-- 4. Asegurar debe_cambiar_password
+ALTER TABLE personal_cenate ALTER COLUMN debe_cambiar_password SET NOT NULL;
+ALTER TABLE personal_cenate ALTER COLUMN debe_cambiar_password SET DEFAULT true;

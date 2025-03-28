@@ -20,21 +20,29 @@ interface User {
   [key: string]: any;
 }
 
+interface AuthTokens {
+  token: string;
+  refreshToken?: string;
+  expiresIn?: number;
+}
+
 interface ApiResponse<T = any> {
-  [x: string]: any;
   success: boolean;
   message?: string;
   token?: string;
+  refreshToken?: string;
   user?: User;
   data?: T;
   status?: number;
   errors?: Record<string, string[]>;
+  error?: string | any;
 }
 
 interface ApiError {
   message?: string;
   status?: number;
   errors?: Record<string, string[]>;
+  shouldLogout?: boolean;
 }
 
 interface NewUserData {
@@ -70,85 +78,131 @@ const api = axios.create({
     "Content-Type": "application/json",
     "Accept": "application/json"
   },
-  timeout: 10000, // 10 segundos de timeout
+  timeout: 10000,
 });
 
-// Interceptor para añadir token a las solicitudes
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    _isRetry?: boolean;
+    _skipAuth?: boolean;
+  }
+}
+
+// ==================== MANEJO DE TOKENS ====================
+const storeAuthTokens = (tokens: AuthTokens): void => {
+  if (tokens.token) {
+    localStorage.setItem("authToken", tokens.token);
+    api.defaults.headers.common.Authorization = `Bearer ${tokens.token}`;
+  }
+  if (tokens.refreshToken) {
+    localStorage.setItem("refreshToken", tokens.refreshToken);
+  }
+};
+
+export const clearAuthTokens = (): void => {
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("refreshToken");
+  delete api.defaults.headers.common.Authorization;
+};
+
+export const validateToken = (): boolean => {
+  const token = localStorage.getItem("authToken");
+  if (!token) return false;
+  
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 > Date.now();
+  } catch (error) {
+    return false;
+  }
+};
+
+export const initializeAuth = (): void => {
+  const token = localStorage.getItem("authToken");
+  if (token && validateToken()) {
+    api.defaults.headers.common.Authorization = `Bearer ${token}`;
+  } else {
+    clearAuthTokens();
+  }
+};
+
+// Inicializar al cargar el módulo
+initializeAuth();
+
+// ==================== INTERCEPTORES ====================
+api.interceptors.request.use(config => {
+  if (!config._skipAuth) {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
 api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+  response => response,
+  async error => {
     const originalRequest = error.config;
     
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
+    if (error.response?.status === 401 && !originalRequest._isRetry) {
+      originalRequest._isRetry = true;
       
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        const response = await api.post('/auth/refresh', { refreshToken });
-        
-        localStorage.setItem('token', response.data.token);
-        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-        
+        const newToken = await handleTokenRefresh();
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
-      } catch (e) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        window.location.href = '/login';
+      } catch (refreshError) {
+        clearAuthTokens();
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login?sessionExpired=true';
+        }
+        return Promise.reject(refreshError);
       }
+    }
+    
+    if (error.response?.data?.shouldLogout) {
+      clearAuthTokens();
+      window.location.href = "/login?sessionExpired=true";
     }
     
     return Promise.reject(error);
   }
 );
 
-// Interceptor para manejar respuestas
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
+// ==================== FUNCIONES DE API ====================
+async function handleTokenRefresh(): Promise<string> {
+  const refreshToken = localStorage.getItem("refreshToken");
+  if (!refreshToken) throw new Error("No refresh token available");
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      
-      try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) {
-          throw new Error("No hay refreshToken disponible");
-        }
+  try {
+    const response = await api.post<ApiResponse<AuthTokens>>(
+      '/auth/refresh', 
+      { refreshToken },
+      { _skipAuth: true }
+    );
 
-        const response = await api.post('/auth/refresh', { refreshToken });
-
-        if (!response.data.token) {
-          throw new Error("No se recibió un nuevo token");
-        }
-
-        localStorage.setItem('token', response.data.token);
-        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-
-        console.log("🔄 Token refrescado exitosamente");
-
-        // Reintentar la petición original con el nuevo token
-        originalRequest.headers['Authorization'] = `Bearer ${response.data.token}`;
-        return api(originalRequest);
-      } catch (e) {
-        console.error("❌ No se pudo refrescar el token, cerrando sesión...");
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        window.location.href = '/login';
-      }
+    if (!response.data.token) {
+      throw new Error("Invalid token in response");
     }
 
-    return Promise.reject(error);
+    storeAuthTokens({
+      token: response.data.token,
+      refreshToken: response.data.refreshToken
+    });
+
+    return response.data.token;
+  } catch (error) {
+    clearAuthTokens();
+    throw error;
   }
-);
+}
 
-
-// ==================== FUNCIONES DE MANEJO DE ERRORES ====================
 const handleAxiosError = (error: unknown): ApiResponse => {
   if (axios.isAxiosError(error)) {
     const status = error.response?.status ?? 500;
     const errorData = error.response?.data as ApiError;
-    const errorMessage = errorData?.message || error.message || "Error desconocido en la API";
+    const errorMessage = errorData?.message || error.message || "Error desconocido";
 
     console.error(`❌ [API ERROR ${status}] ${errorMessage}`);
     if (error.response?.data) console.error("Detalles:", error.response.data);
@@ -156,24 +210,18 @@ const handleAxiosError = (error: unknown): ApiResponse => {
     return { 
       success: false, 
       message: errorMessage,
-      status: status,
+      status,
       errors: errorData?.errors
     };
   }
 
   if (error instanceof Error) {
     console.error("❌ [CLIENT ERROR]", error.message);
-    return { 
-      success: false, 
-      message: error.message 
-    };
+    return { success: false, message: error.message };
   }
 
   console.error("❌ [UNKNOWN ERROR]", error);
-  return { 
-    success: false, 
-    message: "Error desconocido" 
-  };
+  return { success: false, message: "Error desconocido" };
 };
 
 // ==================== FUNCIONES PRINCIPALES ====================
@@ -182,7 +230,6 @@ export const getRequest = async <T = any>(
   token?: string
 ): Promise<ApiResponse<T>> => {
   try {
-    console.log(`📡 GET ${url}`);
     const response = await api.get<ApiResponse<T>>(url, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
@@ -198,7 +245,6 @@ export const postRequest = async <T = any>(
   token?: string
 ): Promise<ApiResponse<T>> => {
   try {
-    console.log(`📤 POST ${url}`, data);
     const response = await api.post<ApiResponse<T>>(url, data, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
@@ -214,51 +260,90 @@ export const putRequest = async <T = any>(
   token?: string
 ): Promise<ApiResponse<T>> => {
   try {
-    const authToken = token ?? localStorage.getItem('token');
-    console.log('🛠️ Actualizando datos con token:', authToken);
-
-    if (!authToken) {
-      throw new Error("No hay token disponible para actualizar datos");
-    }
-
     const response = await api.put<ApiResponse<T>>(url, data, {
-      headers: { Authorization: `Bearer ${authToken}` },
+      headers: { Authorization: `Bearer ${token || localStorage.getItem("authToken") || ""}` },
     });
-
     return response.data;
   } catch (error) {
-    console.error("❌ Error en PUT request:", error);
     throw handleAxiosError(error);
   }
 };
 
 export const deleteRequest = async <T = any>(
   url: string,
-  token: string
+  token?: string
 ): Promise<ApiResponse<T>> => {
   try {
-    console.log(`🗑️ DELETE ${url}`);
     const response = await api.delete<ApiResponse<T>>(url, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token || localStorage.getItem("authToken") || ""}` },
     });
     return response.data;
   } catch (error) {
-    console.error("❌ Error en DELETE request:", error);
-    return handleAxiosError(error);
+    throw handleAxiosError(error);
   }
 };
 
-// ==================== FUNCIONES ESPECÍFICAS ====================
+// ==================== FUNCIONES DE AUTENTICACIÓN ====================
+export const loginUser = async (dni: string, password: string) => {
+  try {
+    console.log("Preparando solicitud de login...");
+    
+    // Limpiar espacios en credenciales
+    const cleanDni = dni.trim();
+    const cleanPassword = password.trim();
+    
+    const response = await api.post("/auth/login", {
+      dni: cleanDni,
+      password: cleanPassword
+    }, {
+      timeout: 10000,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    return response.data;
+    
+  } catch (error: any) {
+    console.error("Error en loginUser:", {
+      message: error.message,
+      response: error.response?.data,
+      request: {
+        dni: dni,
+        password: '***' // No registrar contraseñas reales
+      }
+    });
+    
+    if (error.response) {
+      // Error del servidor (400, 500, etc.)
+      throw {
+        success: false,
+        status: error.response.status,
+        message: error.response.data?.message || "Error en el servidor",
+        error: error.response.data?.error
+      };
+    } else {
+      // Error de conexión
+      throw {
+        success: false,
+        message: "Error de conexión con el servidor",
+        error: error.message
+      };
+    }
+  }
+};
+
 export const registerUser = async (
   userData: RegisterUserData
 ): Promise<ApiResponse<User>> => {
   try {
-    console.log("👤 Registrando nuevo usuario:", userData);
     const response = await postRequest<User>("/auth/register", userData);
     
     if (response.success && response.token) {
-      localStorage.setItem("token", response.token);
-      console.log("🔑 Token de registro guardado");
+      storeAuthTokens({
+        token: response.token,
+        refreshToken: response.refreshToken
+      });
     }
     
     return response;
@@ -267,28 +352,13 @@ export const registerUser = async (
   }
 };
 
-export const loginUser = async (
-  dni: string, 
-  password: string
-): Promise<ApiResponse<User>> => {
-  try {
-    console.log("🔐 Intentando inicio de sesión para DNI:", dni);
-    const response = await postRequest<User>("/auth/login", { dni, password });
-    
-    if (response.success && response.token) {
-      localStorage.setItem("token", response.token);
-      console.log("✅ Inicio de sesión exitoso. Token guardado");
-    }
-    
-    return response;
-  } catch (error) {
-    return handleAxiosError(error);
-  }
+export const logout = (): void => {
+  clearAuthTokens();
 };
 
+// ==================== FUNCIONES ESPECÍFICAS ====================
 export const getProfile = async (): Promise<ApiResponse<User>> => {
   try {
-    console.log("👤 Obteniendo perfil de usuario");
     return await getRequest<User>("/user/portaladmin");
   } catch (error) {
     return handleAxiosError(error);
@@ -299,35 +369,13 @@ export const createUser = async (
   userData: NewUserData
 ): Promise<ApiResponse<User>> => {
   try {
-    console.log("➕ Creando nuevo usuario:", userData);
     const response = await postRequest<User>("/personal", {
       ...userData,
-      password: "12345678", // Contraseña por defecto
+      password: "12345678",
       debe_cambiar_password: true
     });
-    
-    console.log("📝 Respuesta de creación de usuario:", response);
     return response;
   } catch (error) {
-    console.error("❌ Error en creación de usuario:", error);
     return handleAxiosError(error);
   }
-};
-
-// ==================== FUNCIONES ADICIONALES ====================
-export const validateToken = (): boolean => {
-  const token = localStorage.getItem("token");
-  if (!token) return false;
-  
-  try {
-    // Aquí podrías implementar una verificación más completa del token
-    return true;
-  } catch (error) {
-    return false;
-  }
-};
-
-export const logout = (): void => {
-  localStorage.removeItem("token");
-  console.log("👋 Sesión cerrada. Token removido");
 };
