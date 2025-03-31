@@ -5,6 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 import LoadingSpinner from "../components/Modal/LoadingSpinner";
 import { useNavigate } from "react-router-dom";
 
+// Interfaces para tipado TypeScript
 interface User {
   id: number;
   dni: string;
@@ -22,133 +23,159 @@ interface ApiResponse {
   total?: number;
 }
 
+// Constantes de configuración
 const ITEMS_PER_PAGE_OPTIONS = [5, 10, 20, 50, 100];
 const ROLE_OPTIONS = ["Usuario", "Administrador", "Superadmin"];
+const ALLOWED_ROLES = ["Administrador", "Superadmin"]; // ← Exactamente igual que en el backend// Roles con acceso a esta página
 
 const UpdateRoles = () => {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
+  
+  // Estados del componente
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>("");
-  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [error, setError] = useState("");
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
   const [editedRoles, setEditedRoles] = useState<{ [key: number]: string }>({});
-  const [sortConfig, setSortConfig] = useState<{ key: keyof User; direction: 'asc' | 'desc' } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ 
+    key: keyof User; 
+    direction: 'asc' | 'desc' 
+  } | null>(null);
 
+  /**
+   * Verifica si el token JWT está expirado
+   * @param token - Token JWT
+   * @returns boolean - True si el token está expirado
+   */
+  const isTokenExpired = (token: string): boolean => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.exp * 1000 < Date.now();
+    } catch (e) {
+      return true; // Si hay error al decodificar, considerar como expirado
+    }
+  };
 
-// Agrega esta función para verificar si el token está expirado
-const isTokenExpired = (token: string): boolean => {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.exp * 1000 < Date.now();
-  } catch (e) {
+  /**
+   * Verifica la autenticación y permisos del usuario
+   * @returns boolean - True si está autenticado y tiene permisos
+   */
+   const verifyAuth = (): boolean => {
+    const token = localStorage.getItem("authToken");
+    if (!token || isTokenExpired(token)) {
+      localStorage.removeItem("authToken");
+      navigate('/login');
+      return false;
+    }
+  
+    // Decodifica el token para obtener el rol ACTUAL
+    const decoded = JSON.parse(atob(token.split('.')[1]));
+    const currentRole = decoded.rol;
+  
+    if (!ALLOWED_ROLES.includes(currentRole)) {
+      navigate('/unauthorized');
+      return false;
+    }
+  
     return true;
-  }
-};
+  };
 
-
-  // Función para cargar usuarios
- // Modifica tu fetchUsers para manejar tokens expirados
- const fetchUsers = useCallback(async () => {
+  /**
+   * Obtiene la lista de usuarios desde el API
+   */
+ // En la función fetchUsers:
+const fetchUsers = useCallback(async () => {
+  if (!verifyAuth()) return;
+  
   setLoading(true);
   setError("");
+  
   try {
-    const token = localStorage.getItem("authToken");
-    console.log('Token:', token); // Para depuración
+    const token = localStorage.getItem("authToken") || "";
+    const response = await getRequest<ApiResponse>("/personal", token);
     
-    if (!token) {
-      setError("No estás autenticado");
-      toast.error("Por favor inicia sesión");
-      navigate('/login');
-      setLoading(false);
-      return;
-    }
-
-    // Verificar si el token es válido (no necesariamente expirado)
-    if (token === "null" || token === "undefined" || token.length < 10) {
-      localStorage.removeItem("authToken");
-      setError("Token inválido");
-      toast.error("Sesión inválida, por favor inicia sesión nuevamente");
-      navigate('/login');
-      setLoading(false);
-      return;
-    }
-
-    const response = await getRequest<ApiResponse>("/admin/users", token);
-    
-    if (!response) {
-      throw new Error("No hubo respuesta del servidor");
-    }
-    
-    if (response?.success && Array.isArray(response.data)) {
-      setUsers(response.data);
-    } else {
+    if (!response?.success) {
       throw new Error(response?.message || "Error al obtener usuarios");
     }
-  } catch (err: any) {
-    console.error('Error fetching users:', err);
     
-    if (err?.response?.status === 401 || err.message.includes("autenticación")) {
+    // Solución al error de tipado:
+    const usersData = response.data && Array.isArray(response.data) 
+      ? response.data 
+      : [];
+    setUsers(usersData);
+    
+  } catch (err: any) {
+    console.error("Error fetching users:", err);
+    setError(err.message);
+    toast.error(err.message || "Error al cargar usuarios");
+    
+    if (err?.response?.status === 401) {
       localStorage.removeItem("authToken");
-      setError("Sesión expirada o inválida");
-      toast.error("Por favor inicia sesión nuevamente");
       navigate('/login');
-    } else {
-      setError(err.message || "Error al cargar los usuarios");
-      toast.error(err.message || "Error de conexión con el servidor");
     }
   } finally {
     setLoading(false);
   }
 }, [navigate]);
 
+  // Efecto inicial: Verificar autenticación y cargar datos
   useEffect(() => {
-    fetchUsers();
+    if (verifyAuth()) {
+      fetchUsers();
+    }
   }, [fetchUsers]);
 
-  // Manejo de paginación
+  /**
+   * Maneja el cambio de items por página
+   * @param e - Evento del select
+   */
   const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newItemsPerPage = Number(e.target.value);
     setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1);
+    setCurrentPage(1); // Resetear a la primera página
   };
 
+  /**
+   * Cambia la página actual
+   * @param page - Número de página
+   */
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
-  // Ordenamiento
+  /**
+   * Configura el ordenamiento de columnas
+   * @param key - Columna a ordenar
+   */
   const requestSort = (key: keyof User) => {
     let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+    if (sortConfig?.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
     }
     setSortConfig({ key, direction });
   };
 
-  const sortedUsers = [...users];
-  if (sortConfig) {
-    sortedUsers.sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key]) {
-        return sortConfig.direction === 'asc' ? -1 : 1;
-      }
-      if (a[sortConfig.key] > b[sortConfig.key]) {
-        return sortConfig.direction === 'asc' ? 1 : -1;
-      }
-      return 0;
-    });
-  }
+  // Aplicar ordenamiento
+  const sortedUsers = [...users].sort((a, b) => {
+    if (!sortConfig) return 0;
+    
+    const aValue = a[sortConfig.key] || "";
+    const bValue = b[sortConfig.key] || "";
+    
+    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
 
-  // Filtrado y paginación
-  const filteredUsers = searchTerm
-    ? sortedUsers.filter(user => 
-        user.dni.includes(searchTerm) || 
-        user.nombres.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (user.apellido_paterno && user.apellido_paterno.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (user.apellido_materno && user.apellido_materno.toLowerCase().includes(searchTerm.toLowerCase()))
-      )
-    : sortedUsers;
+  // Filtrar y paginar usuarios
+  const filteredUsers = sortedUsers.filter(user =>
+    [user.dni, user.nombres, user.apellido_paterno, user.apellido_materno]
+      .join(" ")
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
+  );
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const paginatedUsers = filteredUsers.slice(
@@ -156,53 +183,70 @@ const isTokenExpired = (token: string): boolean => {
     currentPage * itemsPerPage
   );
 
-  // Manejo de cambios de rol
+  /**
+   * Maneja el cambio de rol en un usuario
+   * @param userId - ID del usuario
+   * @param newRole - Nuevo rol asignado
+   */
   const handleRoleChange = (userId: number, newRole: string) => {
-    setEditedRoles({ ...editedRoles, [userId]: newRole });
+    setEditedRoles(prev => ({ ...prev, [userId]: newRole }));
   };
 
+  /**
+   * Guarda el cambio de rol en el servidor
+   * @param userId - ID del usuario a actualizar
+   */
   const saveRoleChange = async (userId: number) => {
-    if (!editedRoles[userId]) return;
+    if (!editedRoles[userId] || !verifyAuth()) return;
     
     try {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        toast.error("No estás autenticado");
-        return;
-      }
-
-      await putRequest("/admin/update-role", { userId, newRole: editedRoles[userId] }, token);
+      const token = localStorage.getItem("authToken") || "";
+      await putRequest("/admin/update-role", { 
+        userId, 
+        newRole: editedRoles[userId] 
+      }, token);
       
+      // Actualizar estado local
+      setUsers(prev => prev.map(user => 
+        user.id === userId ? { ...user, rol: editedRoles[userId] } : user
+      ));
+      
+      // Limpiar edición
       setEditedRoles(prev => {
         const updated = { ...prev };
         delete updated[userId];
         return updated;
       });
       
-      // Actualizar el estado local para reflejar el cambio
-      setUsers(users.map(user => 
-        user.id === userId ? { ...user, rol: editedRoles[userId] } : user
-      ));
-      
       toast.success("Rol actualizado correctamente");
-    } catch (error) {
-      console.error("Error al actualizar el rol:", error);
-      toast.error("Error al actualizar el rol");
+    } catch (err: any) {
+      console.error("Error updating role:", err);
+      toast.error(err.message || "Error al actualizar rol");
+      
+      if (err?.response?.status === 401) {
+        localStorage.removeItem("authToken");
+        navigate('/login');
+      }
     }
   };
 
-  // Render helpers
+  /**
+   * Renderiza el ícono de ordenamiento
+   * @param key - Columna actual
+   * @returns JSX.Element - Ícono de flecha
+   */
   const renderSortIcon = (key: keyof User) => {
     if (!sortConfig || sortConfig.key !== key) return null;
     return sortConfig.direction === 'asc' ? '↑' : '↓';
   };
 
+  // Renderizado del componente
   return (
     <div className="container px-4 py-8 mx-auto">
       <div className="p-6 bg-white rounded-lg shadow-md">
         <h1 className="mb-6 text-2xl font-bold text-gray-800">Gestión de Roles de Usuario</h1>
-        
-        {/* Header with search */}
+
+        {/* Barra de búsqueda */}
         <div className="flex flex-col items-start justify-between gap-4 mb-6 md:flex-row md:items-center">
           <div className="relative w-full md:w-64">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -223,7 +267,7 @@ const isTokenExpired = (token: string): boolean => {
           </div>
         </div>
 
-        {/* Table */}
+        {/* Tabla de usuarios */}
         {loading ? (
           <LoadingSpinner />
         ) : error ? (
@@ -233,41 +277,20 @@ const isTokenExpired = (token: string): boolean => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th 
-                    scope="col" 
-                    className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
-                    onClick={() => requestSort('dni')}
-                  >
-                    DNI {renderSortIcon('dni')}
-                  </th>
-                  <th 
-                    scope="col" 
-                    className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
-                    onClick={() => requestSort('nombres')}
-                  >
-                    Nombre {renderSortIcon('nombres')}
-                  </th>
-                  <th 
-                    scope="col" 
-                    className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
-                    onClick={() => requestSort('apellido_paterno')}
-                  >
-                    Apellido Paterno {renderSortIcon('apellido_paterno')}
-                  </th>
-                  <th 
-                    scope="col" 
-                    className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
-                    onClick={() => requestSort('rol')}
-                  >
-                    Rol Actual {renderSortIcon('rol')}
-                  </th>
-                  <th 
-                    scope="col" 
-                    className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                  >
+                  {['dni', 'nombres', 'apellido_paterno', 'rol'].map((key) => (
+                    <th
+                      key={key}
+                      scope="col"
+                      className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase cursor-pointer"
+                      onClick={() => requestSort(key as keyof User)}
+                    >
+                      {key.replace('_', ' ')} {renderSortIcon(key as keyof User)}
+                    </th>
+                  ))}
+                  <th className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                     Nuevo Rol
                   </th>
-                  <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase">
+                  <th className="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase">
                     Acción
                   </th>
                 </tr>
@@ -287,11 +310,9 @@ const isTokenExpired = (token: string): boolean => {
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.rol === 'Administrador' 
-                            ? 'bg-green-100 text-green-800' 
-                            : user.rol === 'Superadmin'
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-blue-100 text-blue-800'
+                          user.rol === 'Administrador' ? 'bg-green-100 text-green-800' :
+                          user.rol === 'Superadmin' ? 'bg-purple-100 text-purple-800' :
+                          'bg-blue-100 text-blue-800'
                         }`}>
                           {user.rol}
                         </span>
@@ -334,7 +355,7 @@ const isTokenExpired = (token: string): boolean => {
           </div>
         )}
 
-        {/* Pagination */}
+        {/* Paginación */}
         {filteredUsers.length > 0 && (
           <div className="flex flex-col items-center justify-between mt-6 space-y-4 md:flex-row md:space-y-0">
             <div className="flex items-center space-x-2">
@@ -344,59 +365,64 @@ const isTokenExpired = (token: string): boolean => {
                 onChange={handleItemsPerPageChange}
                 className="block w-20 py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               >
-                {ITEMS_PER_PAGE_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
+                {ITEMS_PER_PAGE_OPTIONS.map(option => (
+                  <option key={option} value={option}>{option}</option>
                 ))}
               </select>
               <span className="text-sm text-gray-700">por página</span>
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-700">
-                Mostrando <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> a{' '}
-                <span className="font-medium">
-                  {Math.min(currentPage * itemsPerPage, filteredUsers.length)}
-                </span>{' '}
-                de <span className="font-medium">{filteredUsers.length}</span> usuarios
+                Mostrando {(currentPage - 1) * itemsPerPage + 1} a{' '}
+                {Math.min(currentPage * itemsPerPage, filteredUsers.length)} de{' '}
+                {filteredUsers.length} usuarios
               </span>
             </div>
-            
+
             <div className="flex space-x-1">
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className={`px-3 py-1 rounded-md ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                className={`px-3 py-1 rounded-md ${
+                  currentPage === 1 
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
               >
                 Anterior
               </button>
+              
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 let pageNum;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = currentPage - 2 + i;
-                }
-                
+                if (totalPages <= 5) pageNum = i + 1;
+                else if (currentPage <= 3) pageNum = i + 1;
+                else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                else pageNum = currentPage - 2 + i;
+
                 return (
                   <button
                     key={pageNum}
                     onClick={() => handlePageChange(pageNum)}
-                    className={`px-3 py-1 rounded-md ${currentPage === pageNum ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                    className={`px-3 py-1 rounded-md ${
+                      currentPage === pageNum 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
                   >
                     {pageNum}
                   </button>
                 );
               })}
+              
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className={`px-3 py-1 rounded-md ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                className={`px-3 py-1 rounded-md ${
+                  currentPage === totalPages 
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
               >
                 Siguiente
               </button>

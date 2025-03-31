@@ -1,22 +1,23 @@
-import axios, { AxiosError, AxiosResponse } from "axios";
+import axios, { AxiosError, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
+// ==================== CONFIGURACIÓN INICIAL ====================
 const API_URL =
   (import.meta as ImportMeta & { env: Record<string, string> }).env.VITE_API_URL ??
   "http://localhost:5001";
 
 if (!API_URL) {
-  throw new Error("❌ [CONFIG ERROR] La variable de entorno VITE_API_URL no está definida");
+  throw new Error("❌ [CONFIG ERROR] VITE_API_URL no está definida");
 }
 
 // ==================== INTERFACES Y TIPOS ====================
-interface User {
+export interface User {
   id?: number;
   dni: string;
   nombres?: string;
   apellido_paterno?: string;
   apellido_materno?: string;
   correo?: string;
-  rol: string;
+  rol?: string;
   [key: string]: any;
 }
 
@@ -26,7 +27,7 @@ interface AuthTokens {
   expiresIn?: number;
 }
 
-interface ApiResponse<T = any> {
+export interface ApiResponse<T = any> {
   success: boolean;
   message?: string;
   token?: string;
@@ -35,40 +36,16 @@ interface ApiResponse<T = any> {
   data?: T;
   status?: number;
   errors?: Record<string, string[]>;
-  error?: string | any;
+  error?: string;
+  shouldLogout?: boolean;
 }
 
 interface ApiError {
+  error: string;
   message?: string;
   status?: number;
   errors?: Record<string, string[]>;
   shouldLogout?: boolean;
-}
-
-interface NewUserData {
-  dni: string;
-  nombres: string;
-  apellido_paterno: string;
-  apellido_materno: string;
-  correo: string;
-  telefono?: string;
-  fecha_nacimiento?: string;
-  sexo?: string;
-  domicilio?: string;
-  profesion?: string;
-  especialidad?: string;
-  tipo_contrato?: string;
-  rol: string;
-}
-
-interface RegisterUserData {
-  dni: string;
-  nombres: string;
-  apellido_paterno: string;
-  apellido_materno: string;
-  correo: string;
-  password: string;
-  rol?: string;
 }
 
 // ==================== CONFIGURACIÓN AXIOS ====================
@@ -89,10 +66,10 @@ declare module 'axios' {
 }
 
 // ==================== MANEJO DE TOKENS ====================
-const storeAuthTokens = (tokens: AuthTokens): void => {
+export const storeAuthTokens = (tokens: AuthTokens): void => {
   if (tokens.token) {
     localStorage.setItem("authToken", tokens.token);
-    api.defaults.headers.common.Authorization = `Bearer ${tokens.token}`;
+    api.defaults.headers.common['Authorization'] = `Bearer ${tokens.token}`;
   }
   if (tokens.refreshToken) {
     localStorage.setItem("refreshToken", tokens.refreshToken);
@@ -102,7 +79,8 @@ const storeAuthTokens = (tokens: AuthTokens): void => {
 export const clearAuthTokens = (): void => {
   localStorage.removeItem("authToken");
   localStorage.removeItem("refreshToken");
-  delete api.defaults.headers.common.Authorization;
+  localStorage.removeItem("userData");
+  delete api.defaults.headers.common['Authorization'];
 };
 
 export const validateToken = (): boolean => {
@@ -117,20 +95,58 @@ export const validateToken = (): boolean => {
   }
 };
 
-export const initializeAuth = (): void => {
+const initializeAuth = (): void => {
   const token = localStorage.getItem("authToken");
   if (token && validateToken()) {
-    api.defaults.headers.common.Authorization = `Bearer ${token}`;
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   } else {
     clearAuthTokens();
   }
 };
 
-// Inicializar al cargar el módulo
 initializeAuth();
 
+// ==================== FUNCIONES AUXILIARES ====================
+const createErrorResponse = (
+  status: number,
+  message: string,
+  shouldLogout = false
+): ApiResponse => ({
+  success: false,
+  status,
+  message,
+  shouldLogout
+});
+
+const handleAxiosError = (error: unknown): ApiResponse => {
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status ?? 500;
+    const errorData = error.response?.data as ApiError;
+    
+    return {
+      success: false,
+      message: errorData?.message || error.message,
+      status,
+      errors: errorData?.errors,
+      shouldLogout: errorData?.shouldLogout,
+      error: errorData?.error
+    };
+  }
+
+  return {
+    success: false,
+    message: error instanceof Error ? error.message : "Error desconocido"
+  };
+};
+
+const getAuthHeaders = (token?: string): AxiosRequestConfig => ({
+  headers: {
+    Authorization: `Bearer ${token || localStorage.getItem("authToken") || ""}`
+  }
+});
+
 // ==================== INTERCEPTORES ====================
-api.interceptors.request.use(config => {
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   if (!config._skipAuth) {
     const token = localStorage.getItem("authToken");
     if (token) {
@@ -141,9 +157,9 @@ api.interceptors.request.use(config => {
 });
 
 api.interceptors.response.use(
-  response => response,
-  async error => {
-    const originalRequest = error.config;
+  (response: AxiosResponse) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _isRetry?: boolean };
     
     if (error.response?.status === 401 && !originalRequest._isRetry) {
       originalRequest._isRetry = true;
@@ -154,88 +170,46 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         clearAuthTokens();
-        if (!window.location.pathname.includes('/login')) {
-          window.location.href = '/login?sessionExpired=true';
-        }
-        return Promise.reject(refreshError);
+        return Promise.reject(createErrorResponse(401, "Sesión expirada", true));
       }
     }
     
-    if (error.response?.data?.shouldLogout) {
-      clearAuthTokens();
-      window.location.href = "/login?sessionExpired=true";
-    }
-    
-    return Promise.reject(error);
+    return Promise.reject(handleAxiosError(error));
   }
 );
 
 // ==================== FUNCIONES DE API ====================
 async function handleTokenRefresh(): Promise<string> {
   const refreshToken = localStorage.getItem("refreshToken");
-  if (!refreshToken) throw new Error("No refresh token available");
+  if (!refreshToken) throw new Error("No hay token de refresco disponible");
 
-  try {
-    const response = await api.post<ApiResponse<AuthTokens>>(
-      '/auth/refresh', 
-      { refreshToken },
-      { _skipAuth: true }
-    );
+  const response = await api.post<ApiResponse<AuthTokens>>(
+    '/auth/refresh', 
+    { refreshToken },
+    { _skipAuth: true }
+  );
 
-    if (!response.data.token) {
-      throw new Error("Invalid token in response");
-    }
-
-    storeAuthTokens({
-      token: response.data.token,
-      refreshToken: response.data.refreshToken
-    });
-
-    return response.data.token;
-  } catch (error) {
-    clearAuthTokens();
-    throw error;
+  if (!response.data.success || !response.data.token) {
+    throw new Error(response.data.message || "Error al refrescar token");
   }
+
+  storeAuthTokens({
+    token: response.data.token,
+    refreshToken: response.data.refreshToken
+  });
+
+  return response.data.token;
 }
 
-const handleAxiosError = (error: unknown): ApiResponse => {
-  if (axios.isAxiosError(error)) {
-    const status = error.response?.status ?? 500;
-    const errorData = error.response?.data as ApiError;
-    const errorMessage = errorData?.message || error.message || "Error desconocido";
-
-    console.error(`❌ [API ERROR ${status}] ${errorMessage}`);
-    if (error.response?.data) console.error("Detalles:", error.response.data);
-
-    return { 
-      success: false, 
-      message: errorMessage,
-      status,
-      errors: errorData?.errors
-    };
-  }
-
-  if (error instanceof Error) {
-    console.error("❌ [CLIENT ERROR]", error.message);
-    return { success: false, message: error.message };
-  }
-
-  console.error("❌ [UNKNOWN ERROR]", error);
-  return { success: false, message: "Error desconocido" };
-};
-
-// ==================== FUNCIONES PRINCIPALES ====================
 export const getRequest = async <T = any>(
   url: string, 
   token?: string
 ): Promise<ApiResponse<T>> => {
   try {
-    const response = await api.get<ApiResponse<T>>(url, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+    const response = await api.get<ApiResponse<T>>(url, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw handleAxiosError(error);
+    return handleAxiosError(error);
   }
 };
 
@@ -245,27 +219,23 @@ export const postRequest = async <T = any>(
   token?: string
 ): Promise<ApiResponse<T>> => {
   try {
-    const response = await api.post<ApiResponse<T>>(url, data, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+    const response = await api.post<ApiResponse<T>>(url, data, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw handleAxiosError(error);
+    return handleAxiosError(error);
   }
 };
 
 export const putRequest = async <T = any>(
   url: string, 
-  data: Record<string, unknown>, 
+  data: object,
   token?: string
 ): Promise<ApiResponse<T>> => {
   try {
-    const response = await api.put<ApiResponse<T>>(url, data, {
-      headers: { Authorization: `Bearer ${token || localStorage.getItem("authToken") || ""}` },
-    });
+    const response = await api.put<ApiResponse<T>>(url, data, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw handleAxiosError(error);
+    return handleAxiosError(error);
   }
 };
 
@@ -274,79 +244,37 @@ export const deleteRequest = async <T = any>(
   token?: string
 ): Promise<ApiResponse<T>> => {
   try {
-    const response = await api.delete<ApiResponse<T>>(url, {
-      headers: { Authorization: `Bearer ${token || localStorage.getItem("authToken") || ""}` },
-    });
+    const response = await api.delete<ApiResponse<T>>(url, getAuthHeaders(token));
     return response.data;
   } catch (error) {
-    throw handleAxiosError(error);
+    return handleAxiosError(error);
   }
 };
 
 // ==================== FUNCIONES DE AUTENTICACIÓN ====================
-export const loginUser = async (dni: string, password: string) => {
-  try {
-    console.log("Preparando solicitud de login...");
-    
-    // Limpiar espacios en credenciales
-    const cleanDni = dni.trim();
-    const cleanPassword = password.trim();
-    
-    const response = await api.post("/auth/login", {
-      dni: cleanDni,
-      password: cleanPassword
-    }, {
-      timeout: 10000,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    return response.data;
-    
-  } catch (error: any) {
-    console.error("Error en loginUser:", {
-      message: error.message,
-      response: error.response?.data,
-      request: {
-        dni: dni,
-        password: '***' // No registrar contraseñas reales
-      }
-    });
-    
-    if (error.response) {
-      // Error del servidor (400, 500, etc.)
-      throw {
-        success: false,
-        status: error.response.status,
-        message: error.response.data?.message || "Error en el servidor",
-        error: error.response.data?.error
-      };
-    } else {
-      // Error de conexión
-      throw {
-        success: false,
-        message: "Error de conexión con el servidor",
-        error: error.message
-      };
-    }
-  }
-};
-
-export const registerUser = async (
-  userData: RegisterUserData
+export const loginUser = async (
+  dni: string, 
+  password: string
 ): Promise<ApiResponse<User>> => {
   try {
-    const response = await postRequest<User>("/auth/register", userData);
-    
-    if (response.success && response.token) {
+    const response = await api.post<ApiResponse<User>>(
+      "/auth/login", 
+      { dni, password },
+      { _skipAuth: true }
+    );
+
+    if (response.data.success && response.data.token) {
       storeAuthTokens({
-        token: response.token,
-        refreshToken: response.refreshToken
+        token: response.data.token,
+        refreshToken: response.data.refreshToken
       });
+      
+      if (response.data.user) {
+        localStorage.setItem("userData", JSON.stringify(response.data.user));
+      }
     }
-    
-    return response;
+
+    return response.data;
   } catch (error) {
     return handleAxiosError(error);
   }
@@ -358,24 +286,17 @@ export const logout = (): void => {
 
 // ==================== FUNCIONES ESPECÍFICAS ====================
 export const getProfile = async (): Promise<ApiResponse<User>> => {
-  try {
-    return await getRequest<User>("/user/portaladmin");
-  } catch (error) {
-    return handleAxiosError(error);
-  }
+  return getRequest<User>("/user/portaladmin");
 };
 
-export const createUser = async (
-  userData: NewUserData
+export const updateUserRole = async (
+  userId: number,
+  newRole: string,
+  token?: string
 ): Promise<ApiResponse<User>> => {
-  try {
-    const response = await postRequest<User>("/personal", {
-      ...userData,
-      password: "12345678",
-      debe_cambiar_password: true
-    });
-    return response;
-  } catch (error) {
-    return handleAxiosError(error);
-  }
+  return putRequest<User>(
+    "/admin/update-role",
+    { userId, newRole },
+    token
+  );
 };

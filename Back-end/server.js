@@ -192,6 +192,25 @@ app.put("/personal/:id", async (req, res) => {
 });
 
 
+// server.js (añade esto ANTES de las rutas)
+const checkRole = (requiredRole) => (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ success: false, message: "No autorizado" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.rol !== requiredRole) {
+      return res.status(403).json({ success: false, message: "Acceso denegado" });
+    }
+    req.user = decoded; // Adjunta el usuario decodificado al request
+    next();
+  } catch (err) {
+    return res.status(401).json({ success: false, message: "Token inválido" });
+  }
+};
+
+// Protege las rutas de admin
+app.use('/admin', checkRole('Superadmin')); // ← Aplica a TODAS las rutas /admin
 
 // Ruta POST para crear usuarios - Versión corregida
 app.post("/personal", async (req, res) => {

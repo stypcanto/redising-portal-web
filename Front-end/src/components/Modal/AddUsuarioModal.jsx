@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { createUser } from "../../Server/Api";
+import { createUser } from '/src/Server/userApi.ts';
 
 const AddUsuarioModal = ({ showModal, handleClose, onUserCreated }) => {
   // Listas desplegables

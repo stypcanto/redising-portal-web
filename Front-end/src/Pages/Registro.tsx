@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { registerUser } from "../Server/Api";
+import { registerUser } from "../Server/userApi";  // Ruta correcta
 import LoadingSpinner from "../components/Modal/LoadingSpinner";
 
 // Definición de tipos

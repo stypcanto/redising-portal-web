@@ -125,10 +125,12 @@ router.post("/login", async (req, res) => {
       { expiresIn: "8h" }
     );
 
+
+    // Respuesta debe incluir el token explícitamente
     console.log("Login exitoso para:", user.dni);
     res.json({
       success: true,
-      token,
+      token: token, // Asegúrate que esta propiedad se llama "token"
       user: {
         dni: user.dni,
         nombres: user.nombres,
@@ -225,5 +227,25 @@ router.post("/refresh", async (req, res) => {
     });
   }
 });
+
+// Añade esto en authRoutes.js o donde manejes middlewares
+const checkRole = (requiredRole) => (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ success: false, message: "No autorizado" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.rol !== requiredRole) {
+      return res.status(403).json({ success: false, message: "Acceso denegado" });
+    }
+    next();
+  } catch (err) {
+    return res.status(401).json({ success: false, message: "Token inválido" });
+  }
+};
+
+// Luego úsalo en tus rutas admin:
+router.put('/update-role', checkRole('Superadmin'), updateRoleController);
+
 
 module.exports = router;
