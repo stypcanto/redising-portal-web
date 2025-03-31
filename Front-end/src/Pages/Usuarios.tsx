@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
+
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Eye, Edit, Trash2, Plus, Search } from "lucide-react";
 import { getRequest, deleteRequest } from "../Server/Api";
 import AddUsuarioModal from "../components/Modal/AddUsuarioModal";
@@ -29,10 +30,10 @@ interface Usuario {
   fecha_registro: string;
 }
 
-interface ApiResponse {
+interface ApiResponse<T = any> {
   success: boolean;
   message?: string;
-  data: Usuario[];
+  data: T;
   total?: number;
   error?: string;
 }
@@ -43,7 +44,7 @@ const Usuarios = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [itemsPerPage, setItemsPerPage] = useState(3);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -62,44 +63,31 @@ const Usuarios = () => {
     setLoading(true);
     setError("");
     try {
-      // 1. Obtener token de forma consistente
-      const token = localStorage.getItem("token"); // Cambiado a "token" para ser consistente con el resto del código
-      if (!token) {
-        throw new Error("No hay token de autenticación");
-      }
-  
-      // 2. Hacer la petición con manejo de errores
-      const response = await getRequest<ApiResponse>("/personal", token); // Cambiado a "/personal" que parece ser el endpoint correcto
-      
-      // 3. Validar respuesta
-      if (!response) {
-        throw new Error("No se recibió respuesta del servidor");
-      }
-      
-      if (!response.success) {
-        throw new Error(response.message || "Error al obtener usuarios");
-      }
-  
-      if (!Array.isArray(response.data)) {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("No hay token de autenticación");
+
+      // Cambia esta línea para usar la interfaz correcta
+      const response = await getRequest<{ users: Usuario[]; total: number }>("/personal", token);
+
+      if (!response) throw new Error("No se recibió respuesta del servidor");
+      if (!response.success) throw new Error(response.message || "Error al obtener usuarios");
+
+      // Verifica la estructura real de la respuesta
+      console.log("Respuesta del servidor:", response);
+
+      // Ajusta según la estructura real de tu respuesta
+      if (Array.isArray(response.data)) {
+        setUsuarios(response.data);
+        setTotalUsers(response.data.length);
+      } else if (response.data && Array.isArray(response.data.users)) {
+        setUsuarios(response.data.users);
+        setTotalUsers(response.data.total);
+      } else {
         throw new Error("Formato de datos inválido");
       }
-  
-      // 4. Actualizar estado correctamente
-      setUsuarios(response.data);
-      
-      // 5. Actualizar total si viene en la respuesta
-      if (response.total !== undefined) {
-        setTotalUsers(response.total);
-      }
-      
+
     } catch (err: unknown) {
-      // 6. Mejor manejo de errores con TypeScript
-      let errorMessage = "Error al cargar usuarios";
-      if (err instanceof Error) {
-        errorMessage = err.message;
-        console.error("Error fetching users:", err);
-      }
-      
+      const errorMessage = err instanceof Error ? err.message : "Error al cargar usuarios";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -121,7 +109,7 @@ const Usuarios = () => {
     setCurrentPage(page);
   };
 
-  // Ordenamiento
+  // Ordenamiento mejorado
   const requestSort = (key: keyof Usuario) => {
     let direction: "asc" | "desc" = "asc";
     if (sortConfig?.key === key && sortConfig.direction === "asc") {
@@ -130,75 +118,123 @@ const Usuarios = () => {
     setSortConfig({ key, direction });
   };
 
-  const sortedUsers = [...usuarios];
-  if (sortConfig) {
-    sortedUsers.sort((a, b) => {
-      if (a[sortConfig.key]! < b[sortConfig.key]!) return sortConfig.direction === "asc" ? -1 : 1;
-      if (a[sortConfig.key]! > b[sortConfig.key]!) return sortConfig.direction === "asc" ? 1 : -1;
-      return 0;
-    });
-  }
+  const sortedUsers = useMemo(() => {
+    const sortableItems = [...usuarios];
+    if (sortConfig) {
+      sortableItems.sort((a, b) => {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
 
-  // Filtrado y paginación
-  const filteredUsers = sortedUsers.filter((user) =>
-    `${user.nombres} ${user.apellido_paterno} ${user.apellido_materno} ${user.dni} ${user.rol}`
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
-  );
+        if (aValue === undefined || bValue === undefined) return 0;
+        if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [usuarios, sortConfig]);
+
+  // Filtrado y paginación optimizados
+  const filteredUsers = useMemo(() => {
+    return sortedUsers.filter((user) => {
+      if (!user) return false;
+      
+      const searchString = [
+        user.nombres || '',
+        user.apellido_paterno || '',
+        user.apellido_materno || '',
+        user.dni || '',
+        user.rol || ''
+      ].join(" ").toLowerCase();
+      
+      return searchString.includes(searchTerm.toLowerCase());
+    });
+  }, [sortedUsers, searchTerm]);
+
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredUsers, currentPage, itemsPerPage]);
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-  const paginatedUsers = filteredUsers.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
 
-  // CRUD Operations
-  const handleAddUser = (newUser: Usuario) => {
-    setUsuarios([...usuarios, newUser]);
-    toast.success("Usuario agregado correctamente");
-    setShowAddModal(false);
-  };
+  // Operaciones CRUD
+ // Actualiza handleAddUser
+const handleAddUser = useCallback((newUser) => {
+  setUsuarios(prev => {
+    // Verifica que el nuevo usuario tenga la estructura correcta
+    if (!newUser || !newUser.id || !newUser.nombres || !newUser.dni || !newUser.rol) {
+      toast.error("Datos de usuario incompletos en la respuesta");
+      return prev;
+    }
 
-  const handleEditUser = (updatedUser: Usuario) => {
-    setUsuarios(usuarios.map((user) => (user.id === updatedUser.id ? updatedUser : user)));
+    // Asegura todos los campos requeridos
+    const completeUser: Usuario = {
+      id: newUser.id,
+      dni: newUser.dni,
+      nombres: newUser.nombres,
+      apellido_paterno: newUser.apellido_paterno || '',
+      apellido_materno: newUser.apellido_materno || '',
+      correo: newUser.correo || '',
+      rol: newUser.rol,
+      estado: true,
+      fecha_registro: newUser.fecha_registro || new Date().toISOString(),
+      // Campos opcionales
+      fecha_nacimiento: newUser.fecha_nacimiento,
+      sexo: newUser.sexo,
+      telefono: newUser.telefono,
+      domicilio: newUser.domicilio,
+      profesion: newUser.profesion,
+      especialidad: newUser.especialidad,
+      colegiatura: newUser.colegiatura,
+      tipo_contrato: newUser.tipo_contrato
+    };
+
+    return [...prev, completeUser];
+  });
+}, []);
+
+  const handleEditUser = useCallback((updatedUser: Usuario) => {
+    setUsuarios(prev => prev.map(user =>
+      user.id === updatedUser.id ? updatedUser : user
+    ));
     toast.success("Usuario actualizado correctamente");
     setShowEditModal(false);
-  };
+  }, []);
 
-  const handleDeleteUser = async () => {
+  const handleDeleteUser = useCallback(async () => {
     if (!selectedUser) return;
-  
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         toast.error("No estás autenticado");
         return;
       }
-  
-      // Usar la función deleteRequest del Api.ts
+
       const response = await deleteRequest(`/personal/${selectedUser.id}`, token);
-  
+
       if (response?.success) {
-        setUsuarios(usuarios.filter(user => user.id !== selectedUser.id));
+        setUsuarios(prev => prev.filter(user => user.id !== selectedUser.id));
         toast.success("Usuario eliminado correctamente");
-        setShowDeleteModal(false);
       } else {
         throw new Error(response?.message || "Error al eliminar el usuario");
       }
     } catch (error) {
       console.error("Error al eliminar usuario:", error);
-      toast.error(error.message || "Error de conexión con el servidor");
-      
-      // Cerrar el modal incluso si hay error
-      setSelectedUser(null);
+      toast.error(error instanceof Error ? error.message : "Error de conexión con el servidor");
+    } finally {
       setShowDeleteModal(false);
+      setSelectedUser(null);
     }
-  };
+  }, [selectedUser]);
 
   const renderSortIcon = (key: keyof Usuario) => {
     if (!sortConfig || sortConfig.key !== key) return null;
     return sortConfig.direction === "asc" ? "↑" : "↓";
   };
+
+
 
   return (
     <div className="container px-4 py-8 mx-auto">
@@ -293,11 +329,10 @@ const Usuarios = () => {
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                         <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            user.rol === "Admin"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-blue-100 text-blue-800"
-                          }`}
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.rol === 'Administrador' ? 'bg-green-100 text-green-800' :
+                              user.rol === 'Superadmin' ? 'bg-purple-100 text-purple-800' :
+                                'bg-blue-100 text-blue-800'
+                            }`}
                         >
                           {user.rol}
                         </span>
@@ -382,11 +417,10 @@ const Usuarios = () => {
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className={`px-3 py-1 rounded-md ${
-                  currentPage === 1
+                className={`px-3 py-1 rounded-md ${currentPage === 1
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                     : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
+                  }`}
               >
                 Anterior
               </button>
@@ -406,11 +440,10 @@ const Usuarios = () => {
                   <button
                     key={pageNum}
                     onClick={() => handlePageChange(pageNum)}
-                    className={`px-3 py-1 rounded-md ${
-                      currentPage === pageNum
+                    className={`px-3 py-1 rounded-md ${currentPage === pageNum
                         ? "bg-blue-600 text-white"
                         : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                    }`}
+                      }`}
                   >
                     {pageNum}
                   </button>
@@ -419,11 +452,10 @@ const Usuarios = () => {
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className={`px-3 py-1 rounded-md ${
-                  currentPage === totalPages
+                className={`px-3 py-1 rounded-md ${currentPage === totalPages
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                     : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
+                  }`}
               >
                 Siguiente
               </button>
@@ -434,10 +466,10 @@ const Usuarios = () => {
 
       {/* Modals */}
       <AddUsuarioModal
-  showModal={showAddModal}
-  handleClose={() => setShowAddModal(false)}
-  onUserCreated={handleAddUser}  // <<-- Cambiado a onUserCreated
-/>
+        showModal={showAddModal}
+        handleClose={() => setShowAddModal(false)}
+        onUserCreated={handleAddUser}  // <<-- Cambiado a onUserCreated
+      />
 
       {selectedUser && (
         <>

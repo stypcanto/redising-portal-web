@@ -93,20 +93,40 @@ const AddUsuarioModal = ({ showModal, handleClose, onUserCreated }) => {
   // Función para crear usuario
   const handleAddUser = async (userData) => {
     try {
-      const response = await createUser(userData);
-      
+      const response = await createUser({
+        dni: userData.dni,
+        nombres: userData.nombres,
+        apellido_paterno: userData.apellido_paterno,
+        apellido_materno: userData.apellido_materno,
+        correo: userData.correo,
+        telefono: userData.telefono,
+        fecha_nacimiento: userData.fecha_nacimiento,
+        sexo: userData.sexo,
+        domicilio: userData.domicilio,
+        profesion: userData.profesion,
+        especialidad: userData.especialidad,
+        tipo_contrato: userData.tipo_contrato,
+        rol: userData.rol,
+        password: "12345678",
+        debe_cambiar_password: true
+      });
+
+      console.log("Respuesta de la API:", response); // Para depuración
+
+      if (!response) {
+        throw new Error("No se recibió respuesta del servidor");
+      }
+
       if (response.success) {
         toast.success("Usuario creado exitosamente. Contraseña temporal: 12345678");
-        handleClose();
-        onUserCreated && onUserCreated(response.data);
-        return true;
+        return response.data;
       } else {
-        throw new Error(response.message || "Error al crear usuario");
+              // Mostrar el mensaje de error del servidor si existe
+      throw new Error(response.message || response.error || "Error al crear usuario");
       }
     } catch (error) {
       console.error("Error al crear usuario:", error);
-      toast.error(error.message || "Error al conectar con el servidor");
-      return false;
+      throw error;
     }
   };
 
@@ -194,7 +214,12 @@ const AddUsuarioModal = ({ showModal, handleClose, onUserCreated }) => {
         debe_cambiar_password: true
       };
 
-      await handleAddUser(userData);
+      const createdUser = await handleAddUser(userData);
+      onUserCreated(createdUser);
+      handleClose();
+    } catch (error) {
+      console.error("Error en handleSubmit:", error);
+      toast.error(error.message || "Error al crear usuario");
     } finally {
       setIsSubmitting(false);
     }

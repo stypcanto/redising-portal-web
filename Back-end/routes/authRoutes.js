@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const pool = require("../config/db");
 const { check, validationResult } = require("express-validator");
+const { updateRoleController } = require('../controllers/authController');
 
 const router = express.Router();
 
@@ -13,7 +14,7 @@ router.post(
     check("dni").notEmpty().withMessage("El DNI es obligatorio"),
     check("correo").isEmail().withMessage("Correo inválido"),
     check("password").isLength({ min: 6 }).withMessage("La contraseña debe tener al menos 6 caracteres"),
-    check("rol").notEmpty().withMessage("El rol es obligatorio"),
+    check("rol").isIn(['Admin', 'User', 'Superadmin']).withMessage("Rol no válido"),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -196,8 +197,11 @@ router.post("/refresh", async (req, res) => {
       { expiresIn: "15m", algorithm: "HS512" }
     );
 
-    const refreshToken = jwt.sign(
-      { dni: user.dni },
+    const newRefreshToken = jwt.sign(
+      { 
+        dni: user.rows[0].dni,
+        id: user.rows[0].id  // Añade esto para consistencia
+      },
       process.env.JWT_SECRET_REFRESH || process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -238,11 +242,16 @@ const checkRole = (requiredRole) => (req, res, next) => {
     if (decoded.rol !== requiredRole) {
       return res.status(403).json({ success: false, message: "Acceso denegado" });
     }
+    req.user = decoded; // Añade los datos del usuario al request
     next();
   } catch (err) {
     return res.status(401).json({ success: false, message: "Token inválido" });
   }
 };
+
+
+
+
 
 // Luego úsalo en tus rutas admin:
 router.put('/update-role', checkRole('Superadmin'), updateRoleController);
