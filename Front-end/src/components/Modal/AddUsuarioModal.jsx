@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { createUser } from '/src/Server/userApi.ts';
+import LoadingSpinner from "../Modal/LoadingSpinner";
+
 
 const AddUsuarioModal = ({ showModal, handleClose, onUserCreated }) => {
   // Listas desplegables
@@ -215,8 +217,20 @@ const AddUsuarioModal = ({ showModal, handleClose, onUserCreated }) => {
       };
 
       const createdUser = await handleAddUser(userData);
+    
+      // Llama a onUserCreated con el nuevo usuario
       onUserCreated(createdUser);
+      
+      // Cierra el modal
       handleClose();
+      
+      // Opcional: Forzar recarga de datos después de un breve retraso
+      setTimeout(() => {
+        if (typeof onUserCreated === 'function') {
+          onUserCreated(); // Sin parámetros para indicar que debe refrescar
+        }
+      }, 1000);
+      
     } catch (error) {
       console.error("Error en handleSubmit:", error);
       toast.error(error.message || "Error al crear usuario");
@@ -362,11 +376,11 @@ const AddUsuarioModal = ({ showModal, handleClose, onUserCreated }) => {
                       </select>
                     ) : field === 'fecha_nacimiento' ? (
                       <input
-                        type="date"
-                        value={formData[field] || ''}
-                        onChange={(e) => handleInputChange(field, e.target.value)}
-                        className="w-full p-2 text-gray-800 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      />
+                      type="date"
+                      value={formData[field] || ''}
+                      onChange={(e) => handleInputChange(field, e.target.value)}
+                      className="w-full p-2 text-gray-800 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    />
                     ) : field === 'profesion' ? (
                       <select
                         value={formData[field] || ''}
@@ -447,23 +461,33 @@ const AddUsuarioModal = ({ showModal, handleClose, onUserCreated }) => {
 
         {/* Pie de página */}
         <div className="flex justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
-          <button
-            onClick={handleClose}
-            disabled={isSubmitting}
-            className="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className={`px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-          >
-            {isSubmitting ? 'Guardando...' : 'Guardar Usuario'}
-          </button>
-        </div>
+  <button
+    onClick={handleClose}
+    disabled={isSubmitting}
+    className="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+  >
+    Cancelar
+  </button>
+  <button
+    onClick={handleSubmit}
+    disabled={isSubmitting}
+    className={`relative px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+      isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+    }`}
+  >
+    {isSubmitting ? (
+      <span className="flex items-center justify-center">
+        <svg className="w-4 h-4 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Guardando...
+      </span>
+    ) : (
+      'Guardar Usuario'
+    )}
+  </button>
+</div>
       </div>
     </div>
   );
