@@ -34,7 +34,8 @@ export interface ApiResponse<T = any> {
   refreshToken?: string;
   user?: User;
   data?: T;
-  status?: number;
+  status?: number;       // Para compatibilidad con HTTP
+  statusCode?: number;   // Alternativa común
   errors?: Record<string, string[]>;
   error?: string;
   shouldLogout?: boolean;
@@ -119,24 +120,74 @@ const createErrorResponse = (
 });
 
 const handleAxiosError = (error: unknown): ApiResponse => {
-  if (axios.isAxiosError(error)) {
-    console.error('Error detallado:', error.response?.data); // <- Agrega esto
-    const status = error.response?.status ?? 500;
-    const errorData = error.response?.data as ApiError;
-    
+  // Manejo de errores no relacionados a Axios
+  if (!axios.isAxiosError(error)) {
     return {
       success: false,
-      message: errorData?.message || error.message,
+      message: error instanceof Error ? error.message : 'Error desconocido',
+      status: 500,
+      shouldLogout: false
+    };
+  }
+
+  const status = error.response?.status ?? 500;
+  const errorData = error.response?.data as ApiError | undefined;
+  
+  // Mensajes base según el código de estado
+  let defaultMessage = 'Error en la solicitud';
+  let shouldLogout = false;
+
+  switch (status) {
+    case 400:
+      defaultMessage = 'Solicitud incorrecta';
+      break;
+    case 401:
+      defaultMessage = 'No autorizado';
+      shouldLogout = true;
+      break;
+    case 403:
+      defaultMessage = 'No tienes permisos para esta acción';
+      shouldLogout = true;
+      break;
+    case 404:
+      defaultMessage = 'Recurso no encontrado';
+      break;
+    case 408:
+      defaultMessage = 'Tiempo de espera agotado';
+      break;
+    case 500:
+      defaultMessage = 'Error interno del servidor';
+      break;
+    case 503:
+      defaultMessage = 'Servicio no disponible';
+      break;
+  }
+
+  // Mensaje detallado de la respuesta (si existe)
+  const serverMessage = errorData?.message || 
+                       errorData?.error || 
+                       error.message || 
+                       defaultMessage;
+
+  // Si hay errores de validación, formatearlos
+  const validationErrors = errorData?.errors;
+  if (validationErrors) {
+    return {
+      success: false,
+      message: 'Errores de validación',
+      errors: validationErrors,
       status,
-      errors: errorData?.errors,
-      shouldLogout: errorData?.shouldLogout,
-      error: errorData?.error
+      shouldLogout
     };
   }
 
   return {
     success: false,
-    message: error instanceof Error ? error.message : "Error desconocido"
+    message: serverMessage,
+    status,
+    shouldLogout: errorData?.shouldLogout ?? shouldLogout,
+    error: errorData?.error,
+    ...(error.response?.data || {}) // Preserva cualquier otra propiedad del error
   };
 };
 

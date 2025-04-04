@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../Server/userApi";
 import LoadingSpinner from "../components/Modal/LoadingSpinner";
-import { isAxiosError } from 'axios';
+
 
 // Definición de tipos mejorada
 interface FormData {
@@ -17,13 +17,7 @@ interface FormData {
   rol: string;
 }
 
-interface UserRegistrationData extends Omit<FormData, 'confirmPassword'> {
-  debe_cambiar_password: boolean;
-  estado: boolean;
-  fecha_registro: string;
-  tipo_contrato: string;
-  profesion: string;
-}
+
 
 
 type MessageType = "success" | "error" | "";
@@ -140,7 +134,6 @@ const Registro: React.FC = () => {
     e.preventDefault();
     setMessage({ text: "", type: "" });
   
-    // Validar el formulario antes de enviar
     if (!validateForm()) {
       setMessage({
         text: "Por favor corrige los errores en el formulario",
@@ -150,15 +143,15 @@ const Registro: React.FC = () => {
     }
   
     setLoading(true);
+  
     try {
-      // Preparar los datos para el backend
-      const registrationData: UserRegistrationData = {
-        dni: formData.dni,
-        nombres: formData.nombres,
-        apellido_paterno: formData.apellido_paterno,
-        apellido_materno: formData.apellido_materno || "",
-        correo: formData.correo.toLowerCase(),
-        telefono: formData.telefono || "",
+      const registrationData = {
+        dni: formData.dni.trim(),
+        nombres: formData.nombres.trim(),
+        apellido_paterno: formData.apellido_paterno.trim(),
+        apellido_materno: formData.apellido_materno?.trim() || "",
+        correo: formData.correo.trim().toLowerCase(),
+        telefono: formData.telefono.trim(),
         password: formData.password,
         rol: "Usuario",
         debe_cambiar_password: false,
@@ -168,68 +161,59 @@ const Registro: React.FC = () => {
         profesion: "N/A"
       };
   
-      console.log("Datos de registro enviados:", registrationData);
+      console.log("Datos enviados:", registrationData);
   
-      // Enviar datos al servidor
       const response = await registerUser(registrationData);
+      
+      console.log("Respuesta completa:", response);
   
-      // Manejar respuesta exitosa
+      if (!response) {
+        throw new Error("No se recibió respuesta del servidor");
+      }
+  
       if (response.success) {
-        setMessage({
-          text: "¡Registro exitoso! Serás redirigido al login",
-          type: "success"
+        setMessage({ 
+          text: "¡Registro exitoso! Serás redirigido al login", 
+          type: "success" 
         });
         setTimeout(() => navigate("/login"), 2500);
       } else {
-        // Manejar errores del servidor
-        const errorMessage = response.errors
-          ? typeof response.errors === 'string'
-            ? response.errors
-            : Object.entries(response.errors)
-                .map(([field, messages]) => 
-                  `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`
-                )
-                .join(' | ')
-          : response.message || "Error en el registro";
+        // Extraer mensaje de error de diferentes posibles ubicaciones
+        const errorMessage = 
+          response.data?.message ||  // Primero busca en response.data.message
+          response.message ||      // Luego en response.message
+          response.error ||        // Después en response.error
+          "Error al registrar usuario"; // Finalmente un mensaje por defecto
   
-        setMessage({
-          text: errorMessage,
-          type: "error"
+        setMessage({ 
+          text: errorMessage, 
+          type: "error" 
         });
+  
+        // Manejo específico para errores de duplicados
+        if (response.status === 400 || response.statusCode === 400) {
+          if (errorMessage.includes('DNI')) {
+            setErrors(prev => ({ ...prev, dni: "Este DNI ya está registrado" }));
+          }
+          if (errorMessage.includes('correo')) {
+            setErrors(prev => ({ ...prev, correo: "Este correo ya está registrado" }));
+          }
+        }
       }
-    } catch (err: unknown) {
-      console.error("Error en el registro:", err);
+    } catch (error) {
+      console.error("Error completo:", error);
       
       let errorMessage = "Error al procesar el registro";
       
-      // Manejo detallado de errores de Axios
-      if (isAxiosError(err)) {
-        const serverError = err.response?.data as {
-          message?: string;
-          errors?: string[] | Record<string, string[]>;
-        };
-        
-        if (serverError?.errors) {
-          if (Array.isArray(serverError.errors)) {
-            errorMessage = serverError.errors.join(', ');
-          } else if (typeof serverError.errors === 'object') {
-            errorMessage = Object.entries(serverError.errors)
-              .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
-              .join(' | ');
-          }
-        } else if (serverError?.message) {
-          errorMessage = serverError.message;
-        } else {
-          errorMessage = err.message;
-        }
+      // Manejo de errores de Axios
+      if (error.isAxiosError && error.response) {
+        errorMessage = error.response.data?.message || 
+                     error.response.data?.error || 
+                     error.message;
       } 
-      // Manejo de errores estándar
-      else if (err instanceof Error) {
-        errorMessage = err.message;
-      }
-      // Manejo de strings de error
-      else if (typeof err === 'string') {
-        errorMessage = err;
+      // Manejo de otros tipos de errores
+      else if (error.message) {
+        errorMessage = error.message;
       }
   
       setMessage({ 

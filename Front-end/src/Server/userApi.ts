@@ -68,8 +68,9 @@ export const loginUser = async (dni: string, password: string): Promise<ApiRespo
   }
 };
 
+
+
 export const registerUser = async (userData: User): Promise<ApiResponse<User>> => {
-  // Limpieza básica de datos
   const cleanedData = {
     ...userData,
     dni: userData.dni.trim(),
@@ -79,8 +80,17 @@ export const registerUser = async (userData: User): Promise<ApiResponse<User>> =
     apellido_materno: userData.apellido_materno?.trim()
   };
 
-  return postRequest<User>("/auth/register", cleanedData);
+  const response = await postRequest<User>("/auth/register", cleanedData);
+  
+  // Si hay error, lo propagamos directamente
+  if (!response.success) {
+    return response;
+  }
+
+  // Si es éxito, devolvemos la respuesta
+  return response;
 };
+
 
 export const logoutUser = (): void => {
   clearAuthTokens();
