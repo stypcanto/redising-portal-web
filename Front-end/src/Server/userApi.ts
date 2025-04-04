@@ -22,8 +22,8 @@ interface User {
   profesion?: string;
   especialidad?: string;
   tipo_contrato?: string;
-  rol: string;
-  password: string;
+  rol: string;            // <- Obligatorio
+  password: string;       // <- Obligatorio
   debe_cambiar_password?: boolean;
   colegiatura?: string;
   [key: string]: any;

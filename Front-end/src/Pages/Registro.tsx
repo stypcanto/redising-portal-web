@@ -1,20 +1,30 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { registerUser } from "../Server/userApi";  // Ruta correcta
+import { registerUser } from "../Server/userApi";
 import LoadingSpinner from "../components/Modal/LoadingSpinner";
+import { isAxiosError } from 'axios';
 
-// Definición de tipos
+// Definición de tipos mejorada
 interface FormData {
   dni: string;
   nombres: string;
   apellido_paterno: string;
   apellido_materno: string;
-  telefono: string;  // Añade esto
+  telefono: string;
   correo: string;
   password: string;
   confirmPassword: string;
   rol: string;
 }
+
+interface UserRegistrationData extends Omit<FormData, 'confirmPassword'> {
+  debe_cambiar_password: boolean;
+  estado: boolean;
+  fecha_registro: string;
+  tipo_contrato: string;
+  profesion: string;
+}
+
 
 type MessageType = "success" | "error" | "";
 
@@ -31,7 +41,7 @@ const Registro: React.FC = () => {
     apellido_paterno: "",
     apellido_materno: "",
     correo: "",
-    telefono:"",
+    telefono: "",
     password: "",
     confirmPassword: "",
     rol: "Usuario",
@@ -45,15 +55,20 @@ const Registro: React.FC = () => {
   // Manejo de cambios en los inputs
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    
-    // Validación especial para DNI
-    if (name === "dni") {
-      if (value.length > 8) return;
-      if (value && !/^\d+$/.test(value)) return;
+
+    // Validaciones específicas por campo
+    switch (name) {
+      case "dni":
+        if (value.length > 8) return;
+        if (value && !/^\d+$/.test(value)) return;
+        break;
+      case "telefono":
+        if (value && !/^\d*$/.test(value)) return;
+        break;
     }
-    
+
     setFormData(prev => ({ ...prev, [name]: value }));
-    
+
     // Limpiar error si existe
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: "" }));
@@ -72,17 +87,20 @@ const Registro: React.FC = () => {
     } else if (formData.dni.length !== 8) {
       newErrors.dni = "DNI debe tener exactamente 8 dígitos";
       isValid = false;
-    } else if (!/^\d+$/.test(formData.dni)) {
-      newErrors.dni = "DNI debe contener solo números";
+    }
+
+    // Validación de teléfono
+    if (formData.telefono && formData.telefono.length > 9) {
+      newErrors.telefono = "Teléfono no puede exceder 9 dígitos";
       isValid = false;
     }
 
     // Validación de campos obligatorios
     const requiredFields: Array<keyof FormData> = [
-      "nombres", 
-      "apellido_paterno", 
-      "correo", 
-      "password", 
+      "nombres",
+      "apellido_paterno",
+      "correo",
+      "password",
       "confirmPassword"
     ];
 
@@ -122,45 +140,100 @@ const Registro: React.FC = () => {
     e.preventDefault();
     setMessage({ text: "", type: "" });
   
-    if (!validateForm()) return;
+    // Validar el formulario antes de enviar
+    if (!validateForm()) {
+      setMessage({
+        text: "Por favor corrige los errores en el formulario",
+        type: "error"
+      });
+      return;
+    }
   
     setLoading(true);
     try {
-      const { confirmPassword, ...dataToSend } = formData;
-      
-      // Añade campos requeridos por el backend
-      const completeData = {
-        ...dataToSend,
-        password: formData.password, // Asegúrate que se envía
+      // Preparar los datos para el backend
+      const registrationData: UserRegistrationData = {
+        dni: formData.dni,
+        nombres: formData.nombres,
+        apellido_paterno: formData.apellido_paterno,
+        apellido_materno: formData.apellido_materno || "",
+        correo: formData.correo.toLowerCase(),
+        telefono: formData.telefono || "",
+        password: formData.password,
+        rol: "Usuario",
         debe_cambiar_password: false,
         estado: true,
         fecha_registro: new Date().toISOString(),
         tipo_contrato: "N/A",
-        profesion: "N/A",
-        rol: "Usuario", // Fuerza el rol por defecto
-        telefono: formData.telefono || "000000000" // Valor por defecto si es necesario
+        profesion: "N/A"
       };
   
-      console.log("Datos completos a enviar:", completeData);
+      console.log("Datos de registro enviados:", registrationData);
   
-      const data = await registerUser(completeData);
-      
-      if (data.success) {
-        setMessage({ 
-          text: "¡Registro exitoso! Serás redirigido al login", 
-          type: "success" 
+      // Enviar datos al servidor
+      const response = await registerUser(registrationData);
+  
+      // Manejar respuesta exitosa
+      if (response.success) {
+        setMessage({
+          text: "¡Registro exitoso! Serás redirigido al login",
+          type: "success"
         });
         setTimeout(() => navigate("/login"), 2500);
       } else {
-        setMessage({ 
-          text: data.message || "Error en el registro. Por favor verifica tus datos.", 
-          type: "error" 
+        // Manejar errores del servidor
+        const errorMessage = response.errors
+          ? typeof response.errors === 'string'
+            ? response.errors
+            : Object.entries(response.errors)
+                .map(([field, messages]) => 
+                  `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`
+                )
+                .join(' | ')
+          : response.message || "Error en el registro";
+  
+        setMessage({
+          text: errorMessage,
+          type: "error"
         });
       }
-    } catch (err) {
-      console.error("Error completo:", err.response?.data || err.message);
+    } catch (err: unknown) {
+      console.error("Error en el registro:", err);
+      
+      let errorMessage = "Error al procesar el registro";
+      
+      // Manejo detallado de errores de Axios
+      if (isAxiosError(err)) {
+        const serverError = err.response?.data as {
+          message?: string;
+          errors?: string[] | Record<string, string[]>;
+        };
+        
+        if (serverError?.errors) {
+          if (Array.isArray(serverError.errors)) {
+            errorMessage = serverError.errors.join(', ');
+          } else if (typeof serverError.errors === 'object') {
+            errorMessage = Object.entries(serverError.errors)
+              .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+              .join(' | ');
+          }
+        } else if (serverError?.message) {
+          errorMessage = serverError.message;
+        } else {
+          errorMessage = err.message;
+        }
+      } 
+      // Manejo de errores estándar
+      else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      // Manejo de strings de error
+      else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+  
       setMessage({ 
-        text: err.response?.data?.message || "Error interno del servidor. Contacta al administrador.", 
+        text: errorMessage, 
         type: "error" 
       });
     } finally {
@@ -169,11 +242,10 @@ const Registro: React.FC = () => {
   };
 
   // Estilos reutilizables
-  const inputStyle = (hasError: boolean): string => 
-    `w-full p-3 border rounded-lg focus:outline-none focus:ring-2 ${
-      hasError 
-        ? "border-red-500 focus:ring-red-200" 
-        : "border-gray-300 focus:ring-blue-200"
+  const inputStyle = (hasError: boolean): string =>
+    `w-full p-3 border rounded-lg focus:outline-none focus:ring-2 ${hasError
+      ? "border-red-500 focus:ring-red-200"
+      : "border-gray-300 focus:ring-blue-200"
     }`;
 
   const labelStyle = "block mb-1 font-medium text-gray-700";
@@ -182,7 +254,7 @@ const Registro: React.FC = () => {
     <div className="min-h-screen bg-cover bg-center flex items-center justify-center bg-[url('/images/fondo-portal-web-cenate-2025.png')]">
       {/* Loading Spinner */}
       {loading && <LoadingSpinner />}
-      
+
       <div className={`w-full max-w-4xl bg-white rounded-xl shadow-xl overflow-hidden ${loading ? "opacity-50" : ""}`}>
         {/* Encabezado */}
         <div className="p-6 text-white bg-[#2e63a6]">
@@ -193,11 +265,10 @@ const Registro: React.FC = () => {
         <div className="p-6 md:p-8">
           {/* Mensaje de estado */}
           {message.text && (
-            <div className={`mb-6 p-4 rounded-lg ${
-              message.type === "error" 
-                ? "bg-red-100 text-red-700" 
+            <div className={`mb-6 p-4 rounded-lg ${message.type === "error"
+                ? "bg-red-100 text-red-700"
                 : "bg-green-100 text-green-700"
-            }`}>
+              }`}>
               {message.text}
             </div>
           )}
@@ -345,9 +416,8 @@ const Registro: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full py-3 px-6 bg-[#2e63a6] text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-all ${
-                  loading ? "opacity-70 cursor-not-allowed" : "hover:scale-[1.02]"
-                }`}
+                className={`w-full py-3 px-6 bg-[#2e63a6] text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-all ${loading ? "opacity-70 cursor-not-allowed" : "hover:scale-[1.02]"
+                  }`}
               >
                 {loading ? "Registrando..." : "Crear Cuenta"}
               </button>
@@ -361,9 +431,8 @@ const Registro: React.FC = () => {
               <button
                 onClick={() => !loading && navigate("/login")}
                 disabled={loading}
-                className={`text-[#2e63a6] font-semibold hover:underline ${
-                  loading ? "opacity-50 cursor-not-allowed" : ""
-                }`}
+                className={`text-[#2e63a6] font-semibold hover:underline ${loading ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
               >
                 Inicia sesión
               </button>

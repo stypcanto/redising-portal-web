@@ -120,6 +120,7 @@ const createErrorResponse = (
 
 const handleAxiosError = (error: unknown): ApiResponse => {
   if (axios.isAxiosError(error)) {
+    console.error('Error detallado:', error.response?.data); // <- Agrega esto
     const status = error.response?.status ?? 500;
     const errorData = error.response?.data as ApiError;
     

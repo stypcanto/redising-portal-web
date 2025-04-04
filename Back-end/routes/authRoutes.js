@@ -11,48 +11,83 @@ const router = express.Router();
 router.post(
   "/register",
   [
-    check("dni").notEmpty().withMessage("El DNI es obligatorio"),
-    check("correo").isEmail().withMessage("Correo inválido"),
-    check("password").isLength({ min: 6 }).withMessage("La contraseña debe tener al menos 6 caracteres"),
-    check("rol").isIn(['Admin', 'User', 'Superadmin']).withMessage("Rol no válido"),
+    check("dni").notEmpty().withMessage("El DNI es obligatorio").isLength({ min: 8, max: 8 }).withMessage("DNI debe tener 8 dígitos"),
+    check("nombres").notEmpty().withMessage("Nombres son obligatorios").isLength({ min: 2 }).withMessage("Nombres muy cortos"),
+    check("apellido_paterno").notEmpty().withMessage("Apellido paterno es obligatorio"),
+    check("correo").isEmail().withMessage("Correo inválido").normalizeEmail(),
+    check("password").isLength({ min: 6 }).withMessage("La contraseña debe tener al menos 6 caracteres")
   ],
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ success: false, errors: errors.array() });
+      return res.status(400).json({ 
+        success: false, 
+        errors: errors.array().map(err => err.msg) 
+      });
     }
 
-    let {
-      dni, nombres, apellido_paterno, apellido_materno, colegiatura, correo,
-      telefono, fecha_nacimiento, sexo, domicilio, especialidad, profesion, 
-      tipo_contrato, password, rol
+    const {
+      dni, nombres, apellido_paterno, apellido_materno = "",
+      correo, telefono = "", password, rol = "Usuario"
     } = req.body;
 
-    // 🔹 Limpieza de datos
-    dni = dni.trim();
-    correo = correo.trim().toLowerCase();
-    nombres = nombres.trim();
-    apellido_paterno = apellido_paterno.trim();
-    apellido_materno = apellido_materno.trim();
-
     try {
-      const userExists = await pool.query("SELECT dni FROM Personal_CENATE WHERE dni = $1", [dni]);
+      // Verificar si usuario ya existe
+      const userExists = await pool.query(
+        "SELECT dni FROM Personal_CENATE WHERE dni = $1 OR correo = $2", 
+        [dni, correo]
+      );
+      
       if (userExists.rows.length > 0) {
-        return res.status(400).json({ success: false, message: "El DNI ya está registrado." });
+        return res.status(400).json({ 
+          success: false, 
+          message: "El DNI o correo ya están registrados" 
+        });
       }
 
+      // Hash de la contraseña
       const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Insertar nuevo usuario con valores por defecto
       const newUser = await pool.query(
-        `INSERT INTO Personal_CENATE (dni, nombres, apellido_paterno, apellido_materno, colegiatura, correo, telefono, fecha_nacimiento, sexo, domicilio, especialidad, profesion, tipo_contrato, password, rol) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) 
-        RETURNING dni, nombres, apellido_paterno, apellido_materno, correo, profesion, rol`,
-        [dni, nombres, apellido_paterno, apellido_materno, colegiatura, correo, telefono, fecha_nacimiento, sexo, domicilio, especialidad, profesion, tipo_contrato, hashedPassword, rol]
+        `INSERT INTO Personal_CENATE (
+          dni, nombres, apellido_paterno, apellido_materno, correo, telefono,
+          password, rol, debe_cambiar_password, estado
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        RETURNING dni, nombres, apellido_paterno, apellido_materno, correo, rol`,
+        [
+          dni,
+          nombres,
+          apellido_paterno,
+          apellido_materno,
+          correo,
+          telefono,
+          hashedPassword,
+          rol,
+          true,  // debe_cambiar_password
+          true   // estado
+        ]
       );
 
-      res.status(201).json({ success: true, message: "Usuario registrado exitosamente.", user: newUser.rows[0] });
+      res.status(201).json({ 
+        success: true, 
+        message: "Usuario registrado exitosamente",
+        user: newUser.rows[0]
+      });
     } catch (err) {
-      console.error("❌ Error al registrar el usuario:", err);
-      res.status(500).json({ success: false, message: "Error al registrar el usuario." });
+      console.error("Error al registrar el usuario:", err);
+      
+      if (err.code === '23505') {
+        return res.status(400).json({ 
+          success: false, 
+          message: "El DNI o correo ya están registrados" 
+        });
+      }
+      
+      res.status(500).json({ 
+        success: false, 
+        message: "Error al registrar el usuario" 
+      });
     }
   }
 );
