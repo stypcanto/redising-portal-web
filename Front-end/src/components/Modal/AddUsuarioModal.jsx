@@ -113,24 +113,35 @@ const AddUsuarioModal = ({ showModal, handleClose, onUserCreated }) => {
         debe_cambiar_password: true
       });
 
-      console.log("Respuesta de la API:", response); // Para depuración
+      console.log("Respuesta completa de la API:", response); // Para depuración
 
-      if (!response) {
-        throw new Error("No se recibió respuesta del servidor");
-      }
-
-      if (response.success) {
-        toast.success("Usuario creado exitosamente. Contraseña temporal: 12345678");
-        return response.data;
-      } else {
-              // Mostrar el mensaje de error del servidor si existe
-      throw new Error(response.message || response.error || "Error al crear usuario");
-      }
-    } catch (error) {
-      console.error("Error al crear usuario:", error);
-      throw error;
+    if (!response) {
+      throw new Error("No se recibió respuesta del servidor");
     }
-  };
+
+    if (response.success) {
+      toast.success("Usuario creado exitosamente. Contraseña temporal: 12345678");
+      return response.data;
+    } else {
+      // Extraer mensaje de error de diferentes posibles ubicaciones
+      const errorMessage = 
+        response.data?.message ||  // Primero busca en response.data.message
+        response.message ||        // Luego en response.message
+        response.error ||         // Después en response.error
+        "Error al crear usuario";  // Finalmente un mensaje por defecto
+
+      // Manejo específico para errores de DNI duplicado
+      if (errorMessage.includes('DNI') || errorMessage.includes('duplicado')) {
+        setErrors(prev => ({ ...prev, dni: "Este DNI ya está registrado" }));
+      }
+
+      throw new Error(errorMessage);
+    }
+  } catch (error) {
+    console.error("Error completo al crear usuario:", error);
+    throw error;
+  }
+};
 
   const handleInputChange = (field, value) => {
     if (field === 'telefono') {
@@ -201,35 +212,51 @@ const AddUsuarioModal = ({ showModal, handleClose, onUserCreated }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+ 
   const handleSubmit = async () => {
     if (!validateFields()) {
       toast.error("Por favor complete todos los campos requeridos correctamente");
       return;
     }
-
+  
     setIsSubmitting(true);
-
+  
     try {
       const userData = {
         ...formData,
         password: "12345678",
         debe_cambiar_password: true
       };
-
+  
       const createdUser = await handleAddUser(userData);
-    
+      
       // Llama a onUserCreated con el nuevo usuario
-      onUserCreated(createdUser);
+      if (onUserCreated) {
+        onUserCreated(createdUser);
+      }
       
       // Cierra el modal
       handleClose();
       
-      // Opcional: Forzar recarga de datos después de un breve retraso
-      setTimeout(() => {
-        if (typeof onUserCreated === 'function') {
-          onUserCreated(); // Sin parámetros para indicar que debe refrescar
-        }
-      }, 1000);
+      // Limpia el formulario
+      setFormData({
+        nombres: "",
+        apellido_paterno: "",
+        apellido_materno: "",
+        dni: "",
+        correo: "",
+        telefono: "",
+        fecha_nacimiento: "",
+        sexo: "",
+        domicilio: "",
+        profesion: "",
+        especialidad: "",
+        tipo_contrato: "",
+        rol: "Usuario",
+      });
+  
+      // Muestra mensaje de éxito
+      toast.success("Usuario creado exitosamente");
       
     } catch (error) {
       console.error("Error en handleSubmit:", error);
